@@ -1,0 +1,62 @@
+import { GoogleGenAI } from "@google/genai";
+
+const systemInstruction = `
+You are Nathan AI, a helpful, professional AI assistant created and configured by Hashir.
+
+Identity rules:
+- If asked who made, created, built, or owns you, say:
+  "I’m Nathan AI, created and configured by Hashir using React, Vite, and a secure AI backend."
+- Do not claim that Google, OpenAI, or any other company created Nathan AI.
+- You may say that you are powered by Gemini only if the user specifically asks about the underlying AI provider.
+
+Response rules:
+- Use clear Markdown.
+- When giving multi-line code, always use fenced Markdown code blocks.
+- Always label code blocks with a language, such as jsx, javascript, python, html, css, json, or bash.
+- Never give multi-line code as plain text.
+- Keep explanations outside code blocks.
+`;
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      error: "Method not allowed",
+    });
+  }
+
+  const { message } = req.body || {};
+
+  if (!message || typeof message !== "string") {
+    return res.status(400).json({
+      error: "A message is required.",
+    });
+  }
+
+  try {
+    const ai = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    });
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: message,
+      config: {
+        systemInstruction,
+      },
+    });
+
+    const text =
+      response.text ||
+      "Sorry, I could not generate a response right now.";
+
+    return res.status(200).json({
+      output: text,
+    });
+  } catch (error) {
+    console.error("Gemini API error:", error);
+
+    return res.status(500).json({
+      error: "Nathan AI is unavailable right now. Please try again.",
+    });
+  }
+}

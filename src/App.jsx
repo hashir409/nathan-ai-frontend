@@ -3,7 +3,6 @@ import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import "./App.css";
-const N8N_CHAT_URL = "https://hashir1113.app.n8n.cloud/webhook/00aaebe1-f9fe-479e-9f9c-7ceec22cb25d/chat";
 const starterMessages = [
   {
     id: 1,
@@ -43,17 +42,15 @@ function App() {
   setMessages((currentMessages) => [...currentMessages, loadingMessage]);
 
   try {
-    const response = await fetch(N8N_CHAT_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action: "sendMessage",
-        chatInput: text,
-        sessionId: "nathan-react-demo-session",
-      }),
-    });
+   const response = await fetch("/api/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    message: text,
+  }),
+});
 
     if (!response.ok) {
       throw new Error("Nathan AI could not respond right now.");
