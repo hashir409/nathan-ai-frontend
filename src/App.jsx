@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import "./App.css";
+import { supabase } from "./lib/supabase";
+import AuthPage from "./components/AuthPage";
 const starterMessages = [
   {
     id: 1,
@@ -13,9 +15,33 @@ const starterMessages = [
 ];
 
 function App() {
+  const [session, setSession] = useState(null);
+const [authLoading, setAuthLoading] = useState(true);
   const [messages, setMessages] = useState(starterMessages);
   const [input, setInput] = useState("");
+ useEffect(() => {
+  async function loadSession() {
+    const {
+      data: { session: currentSession },
+    } = await supabase.auth.getSession();
 
+    setSession(currentSession);
+    setAuthLoading(false);
+  }
+
+  loadSession();
+
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    setSession(nextSession);
+    setAuthLoading(false);
+  });
+
+  return () => {
+    subscription.unsubscribe();
+  };
+}, []);
    async function handleSend(event) {
   event.preventDefault();
 
@@ -92,7 +118,13 @@ function App() {
     console.error(error);
   }
 }
+if (authLoading) {
+  return <div className="auth-loading">Loading Nathan AI...</div>;
+}
 
+if (!session) {
+  return <AuthPage />;
+}
   return (
     <main className="app">
       <section className="chat-card">
