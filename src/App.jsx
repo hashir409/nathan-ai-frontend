@@ -6,6 +6,7 @@ import "./App.css";
 import { supabase } from "./lib/supabase";
 import AuthPage from "./components/AuthPage";
 import ChatSidebar from "./components/ChatSidebar";
+
 const starterMessages = [
   {
     id: 1,
@@ -22,7 +23,9 @@ function App() {
   const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState(null);
   const [chatLoading, setChatLoading] = useState(false);
-const [showSidebar, setShowSidebar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [conversationsTrigger, setConversationsTrigger] = useState(0);
+
   useEffect(() => {
     async function loadSession() {
       const {
@@ -93,7 +96,7 @@ const [showSidebar, setShowSidebar] = useState(false);
     }
 
     loadLatestConversation();
-  }, [session?.user?.id]);
+  }, [session?.user?.id, conversationsTrigger]);
 
   async function handleSend(event) {
     event.preventDefault();
@@ -222,17 +225,6 @@ const [showSidebar, setShowSidebar] = useState(false);
     }
   }
 
-  if (authLoading) {
-    return <div className="auth-loading">Loading Nathan AI...</div>;
-  }
-
-  if (!session) {
-    return <AuthPage />;
-  }
-
-  if (chatLoading) {
-    return <div className="auth-loading">Loading your chat...</div>;
-  }
   async function handleNewChat() {
     setConversationId(null);
     setMessages(starterMessages);
@@ -261,7 +253,8 @@ const [showSidebar, setShowSidebar] = useState(false);
     setChatLoading(false);
     setShowSidebar(false);
   }
-    async function handleRenameChat(id, currentTitle) {
+
+  async function handleRenameChat(id, currentTitle) {
     const newTitle = window.prompt("Rename chat:", currentTitle || "Untitled chat");
     if (newTitle === null || newTitle.trim() === "") return;
 
@@ -276,12 +269,13 @@ const [showSidebar, setShowSidebar] = useState(false);
       return;
     }
 
-    // Refresh sidebar list by forcing re-render
     setConversationsTrigger((n) => n + 1);
   }
 
   async function handleDeleteChat(id) {
-    const confirmed = window.confirm("Are you sure you want to delete this chat? This cannot be undone.");
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this chat? This cannot be undone."
+    );
     if (!confirmed) return;
 
     const { error } = await supabase
@@ -295,7 +289,6 @@ const [showSidebar, setShowSidebar] = useState(false);
       return;
     }
 
-    // If deleted chat was active, reset to new chat
     if (id === conversationId) {
       setConversationId(null);
       setMessages(starterMessages);
@@ -303,8 +296,20 @@ const [showSidebar, setShowSidebar] = useState(false);
 
     setConversationsTrigger((n) => n + 1);
   }
+
+  if (authLoading) {
+    return <div className="auth-loading">Loading Nathan AI...</div>;
+  }
+
+  if (!session) {
+    return <AuthPage />;
+  }
+
+  if (chatLoading) {
+    return <div className="auth-loading">Loading your chat...</div>;
+  }
+
   return (
-      
     <main className="app">
       <button
         className="toggle-sidebar-button"
@@ -320,6 +325,8 @@ const [showSidebar, setShowSidebar] = useState(false);
           activeConversationId={conversationId}
           onNewChat={handleNewChat}
           onSelectChat={handleSelectChat}
+          onRenameChat={handleRenameChat}
+          onDeleteChat={handleDeleteChat}
         />
       )}
 
