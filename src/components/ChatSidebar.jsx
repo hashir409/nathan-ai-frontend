@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-export default function ChatSidebar({ session, activeConversationId, onNewChat, onSelectChat }) {
+export default function ChatSidebar({
+  session,
+  activeConversationId,
+  onNewChat,
+  onSelectChat,
+  onRenameChat,
+  onDeleteChat,
+}) {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,16 +55,39 @@ export default function ChatSidebar({ session, activeConversationId, onNewChat, 
           <div className="no-conversations">No chats yet</div>
         ) : (
           conversations.map((conv) => (
-            <button
+            <div
               key={conv.id}
               className={`conversation-item ${conv.id === activeConversationId ? "active" : ""}`}
-              onClick={() => onSelectChat(conv.id)}
             >
-              <div className="conversation-title">{conv.title || "Untitled chat"}</div>
-              <div className="conversation-time">
-                {new Date(conv.updated_at).toLocaleString()}
+              <button
+                className="conversation-main-button"
+                onClick={() => onSelectChat(conv.id)}
+              >
+                <div className="conversation-title">
+                  {conv.title || "Untitled chat"}
+                </div>
+                <div className="conversation-time">
+                  {new Date(conv.updated_at).toLocaleString()}
+                </div>
+              </button>
+
+              <div className="conversation-actions">
+                <button
+                  className="conversation-action-button"
+                  onClick={() => onRenameChat(conv.id, conv.title)}
+                  title="Rename"
+                >
+                  ✏️
+                </button>
+                <button
+                  className="conversation-action-button"
+                  onClick={() => onDeleteChat(conv.id)}
+                  title="Delete"
+                >
+                  🗑️
+                </button>
               </div>
-            </button>
+            </div>
           ))
         )}
       </div>

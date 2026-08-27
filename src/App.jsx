@@ -261,6 +261,48 @@ const [showSidebar, setShowSidebar] = useState(false);
     setChatLoading(false);
     setShowSidebar(false);
   }
+    async function handleRenameChat(id, currentTitle) {
+    const newTitle = window.prompt("Rename chat:", currentTitle || "Untitled chat");
+    if (newTitle === null || newTitle.trim() === "") return;
+
+    const { error } = await supabase
+      .from("conversations")
+      .update({ title: newTitle.trim() })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Could not rename conversation:", error);
+      alert("Could not rename chat. Check console.");
+      return;
+    }
+
+    // Refresh sidebar list by forcing re-render
+    setConversationsTrigger((n) => n + 1);
+  }
+
+  async function handleDeleteChat(id) {
+    const confirmed = window.confirm("Are you sure you want to delete this chat? This cannot be undone.");
+    if (!confirmed) return;
+
+    const { error } = await supabase
+      .from("conversations")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Could not delete conversation:", error);
+      alert("Could not delete chat. Check console.");
+      return;
+    }
+
+    // If deleted chat was active, reset to new chat
+    if (id === conversationId) {
+      setConversationId(null);
+      setMessages(starterMessages);
+    }
+
+    setConversationsTrigger((n) => n + 1);
+  }
   return (
       
     <main className="app">
