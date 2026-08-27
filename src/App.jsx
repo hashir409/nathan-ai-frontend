@@ -320,14 +320,15 @@ function App() {
       </button>
 
       {showSidebar && (
-        <ChatSidebar
-          session={session}
-          activeConversationId={conversationId}
-          onNewChat={handleNewChat}
-          onSelectChat={handleSelectChat}
-          onRenameChat={handleRenameChat}
-          onDeleteChat={handleDeleteChat}
-        />
+       <ChatSidebar
+  session={session}
+  activeConversationId={conversationId}
+  onNewChat={handleNewChat}
+  onSelectChat={handleSelectChat}
+  onRenameChat={handleRenameChat}
+  onDeleteChat={handleDeleteChat}
+  onClose={() => setShowSidebar(false)}
+/>
       )}
 
       <section className="chat-card">
