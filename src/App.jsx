@@ -5,7 +5,7 @@ import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import "./App.css";
 import { supabase } from "./lib/supabase";
 import AuthPage from "./components/AuthPage";
-
+import ChatSidebar from "./components/ChatSidebar";
 const starterMessages = [
   {
     id: 1,
@@ -22,7 +22,7 @@ function App() {
   const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState(null);
   const [chatLoading, setChatLoading] = useState(false);
-
+const [showSidebar, setShowSidebar] = useState(false);
   useEffect(() => {
     async function loadSession() {
       const {
@@ -233,9 +233,54 @@ function App() {
   if (chatLoading) {
     return <div className="auth-loading">Loading your chat...</div>;
   }
+  async function handleNewChat() {
+    setConversationId(null);
+    setMessages(starterMessages);
+    setShowSidebar(false);
+  }
 
+  async function handleSelectChat(id) {
+    if (!session?.user?.id) return;
+
+    setChatLoading(true);
+
+    const { data: savedMessages, error } = await supabase
+      .from("messages")
+      .select("id, role, content, created_at")
+      .eq("conversation_id", id)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("Could not load conversation:", error);
+      setChatLoading(false);
+      return;
+    }
+
+    setConversationId(id);
+    setMessages(savedMessages || starterMessages);
+    setChatLoading(false);
+    setShowSidebar(false);
+  }
   return (
+      
     <main className="app">
+      <button
+        className="toggle-sidebar-button"
+        onClick={() => setShowSidebar((s) => !s)}
+        aria-label="Toggle chat list"
+      >
+        ☰
+      </button>
+
+      {showSidebar && (
+        <ChatSidebar
+          session={session}
+          activeConversationId={conversationId}
+          onNewChat={handleNewChat}
+          onSelectChat={handleSelectChat}
+        />
+      )}
+
       <section className="chat-card">
         <header className="chat-header">
           <div className="logo">N</div>
