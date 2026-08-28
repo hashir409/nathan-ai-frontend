@@ -45,16 +45,20 @@ export default function ChatSidebar({
 
   return (
     <aside className="chat-sidebar">
-  <div className="sidebar-header">
-    <button className="close-sidebar-button" onClick={onClose} aria-label="Close sidebar">
-      ✕
-    </button>
-    <span className="sidebar-title">Chats</span>
-  </div>
+      <div className="sidebar-top-row">
+        <button
+          className="close-sidebar-button"
+          onClick={onClose}
+          aria-label="Close sidebar"
+        >
+          ✕
+        </button>
+        <span className="sidebar-title">Chats</span>
+      </div>
 
-  <button className="new-chat-button" onClick={onNewChat}>
-    + New Chat
-  </button>
+      <button className="new-chat-button" onClick={onNewChat}>
+        + New Chat
+      </button>
 
       <div className="conversations-list">
         {loading ? (

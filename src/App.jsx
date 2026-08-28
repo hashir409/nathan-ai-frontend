@@ -320,7 +320,7 @@ function App() {
       </button>
 
       {showSidebar && (
-       <ChatSidebar
+     <ChatSidebar
   session={session}
   activeConversationId={conversationId}
   onNewChat={handleNewChat}

@@ -372,4 +372,31 @@
 .conversation-action-button:hover {
   background: #1a1a1a;
   color: #fff;
+}/* Sidebar top row with close button */
+.sidebar-top-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.close-sidebar-button {
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 20px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.close-sidebar-button:hover {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.sidebar-title {
+  font-weight: 700;
+  color: #fff;
+  font-size: 16px;
 }
