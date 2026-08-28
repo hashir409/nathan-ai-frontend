@@ -309,27 +309,35 @@ function App() {
     return <div className="auth-loading">Loading your chat...</div>;
   }
 
-  return (
-    <main className="app">
-      <button
-        className="toggle-sidebar-button"
-        onClick={() => setShowSidebar((s) => !s)}
-        aria-label="Toggle chat list"
-      >
-        ☰
-      </button>
+ return (
+  <main className="app">
+    {showSidebar && (
+      <>
+        <div
+          className="sidebar-overlay"
+          onClick={() => setShowSidebar(false)}
+        />
+        <ChatSidebar
+          session={session}
+          activeConversationId={conversationId}
+          onNewChat={handleNewChat}
+          onSelectChat={handleSelectChat}
+          onRenameChat={handleRenameChat}
+          onDeleteChat={handleDeleteChat}
+          onClose={() => setShowSidebar(false)}
+        />
+      </>
+    )}
 
-      {showSidebar && (
-     <ChatSidebar
-  session={session}
-  activeConversationId={conversationId}
-  onNewChat={handleNewChat}
-  onSelectChat={handleSelectChat}
-  onRenameChat={handleRenameChat}
-  onDeleteChat={handleDeleteChat}
-  onClose={() => setShowSidebar(false)}
-/>
-      )}
+    <button
+      className="toggle-sidebar-button"
+      onClick={() => setShowSidebar((s) => !s)}
+      aria-label="Toggle chat list"
+    >
+      ☰
+    </button>
+
+    
 
       <section className="chat-card">
         <header className="chat-header">

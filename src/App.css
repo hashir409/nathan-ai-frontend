@@ -387,4 +387,26 @@
 }/* force redeploy */
 .force-redeploy {
   content: "v2";
+}.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+}
+
+.chat-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100vh;
+  background: #111;
+  border-right: 1px solid #222;
+  padding: 16px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
 }
