@@ -358,3 +358,19 @@
   cursor: pointer;
   z-index: 90;
 }
+
+/* Force desktop width always */
+@media (max-width: 768px) {
+  .chat-sidebar {
+    width: 280px !important;
+  }
+
+  .app {
+    padding: 24px;
+  }
+
+  .chat-card {
+    width: min(100%, 850px);
+    height: min(82vh, 720px);
+  }
+}
