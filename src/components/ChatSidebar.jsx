@@ -8,7 +8,6 @@ export default function ChatSidebar({
   onSelectChat,
   onRenameChat,
   onDeleteChat,
-  onClose,
 }) {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,17 +44,6 @@ export default function ChatSidebar({
 
   return (
     <aside className="chat-sidebar">
-      <div className="sidebar-top-row">
-        <button
-          className="close-sidebar-button"
-          onClick={onClose}
-          aria-label="Close sidebar"
-        >
-          ✕
-        </button>
-        <span className="sidebar-title">Chats</span>
-      </div>
-
       <button className="new-chat-button" onClick={onNewChat}>
         + New Chat
       </button>
