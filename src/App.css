@@ -228,6 +228,34 @@
   flex-direction: column;
 }
 
+.sidebar-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.close-sidebar-button {
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 20px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.close-sidebar-button:hover {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.sidebar-title {
+  font-weight: 700;
+  color: #fff;
+  font-size: 16px;
+}
+
 .new-chat-button {
   background: #2563eb;
   color: #fff;
@@ -254,7 +282,7 @@
 .conversation-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   background: transparent;
   border-radius: 8px;
   margin-bottom: 6px;
@@ -264,6 +292,26 @@
 .conversation-item.active {
   background: #1f2937;
   border-color: #374151;
+}
+
+.conversation-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.conversation-action-button {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #aaa;
+}
+
+.conversation-action-button:hover {
+  background: #1a1a1a;
+  color: #fff;
 }
 
 .conversation-main-button {
@@ -282,27 +330,6 @@
 
 .conversation-main-button:hover {
   background: #1a1a1a;
-}
-
-.conversation-actions {
-  display: flex;
-  gap: 4px;
-  padding-right: 8px;
-}
-
-.conversation-action-button {
-  background: transparent;
-  border: none;
-  font-size: 16px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  color: #aaa;
-}
-
-.conversation-action-button:hover {
-  background: #1a1a1a;
-  color: #fff;
 }
 
 .conversation-title {

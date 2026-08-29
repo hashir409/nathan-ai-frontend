@@ -8,6 +8,7 @@ export default function ChatSidebar({
   onSelectChat,
   onRenameChat,
   onDeleteChat,
+  onClose,
 }) {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +45,17 @@ export default function ChatSidebar({
 
   return (
     <aside className="chat-sidebar">
+      <div className="sidebar-top-row">
+        <span className="sidebar-title">Chats</span>
+        <button
+          className="close-sidebar-button"
+          onClick={onClose}
+          aria-label="Close sidebar"
+        >
+          ✕
+        </button>
+      </div>
+
       <button className="new-chat-button" onClick={onNewChat}>
         + New Chat
       </button>
@@ -59,18 +71,6 @@ export default function ChatSidebar({
               key={conv.id}
               className={`conversation-item ${conv.id === activeConversationId ? "active" : ""}`}
             >
-              <button
-                className="conversation-main-button"
-                onClick={() => onSelectChat(conv.id)}
-              >
-                <div className="conversation-title">
-                  {conv.title || "Untitled chat"}
-                </div>
-                <div className="conversation-time">
-                  {new Date(conv.updated_at).toLocaleString()}
-                </div>
-              </button>
-
               <div className="conversation-actions">
                 <button
                   className="conversation-action-button"
@@ -87,6 +87,18 @@ export default function ChatSidebar({
                   🗑️
                 </button>
               </div>
+
+              <button
+                className="conversation-main-button"
+                onClick={() => onSelectChat(conv.id)}
+              >
+                <div className="conversation-title">
+                  {conv.title || "Untitled chat"}
+                </div>
+                <div className="conversation-time">
+                  {new Date(conv.updated_at).toLocaleString()}
+                </div>
+              </button>
             </div>
           ))
         )}

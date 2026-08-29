@@ -12,7 +12,7 @@ const starterMessages = [
     id: 1,
     role: "assistant",
     content:
-      "Hi! I’m Nathan AI. Ask me about web development, React, JavaScript, AI, or your next app idea.",
+      "Hi! I'm Nathan AI. Ask me about web development, React, JavaScript, AI, or your next app idea.",
   },
 ];
 
@@ -327,6 +327,7 @@ function App() {
           onSelectChat={handleSelectChat}
           onRenameChat={handleRenameChat}
           onDeleteChat={handleDeleteChat}
+          onClose={() => setShowSidebar(false)}
         />
       )}
 
