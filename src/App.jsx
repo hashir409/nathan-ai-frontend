@@ -12,7 +12,7 @@ const starterMessages = [
     id: 1,
     role: "assistant",
     content:
-      "Hi! I’m Nathan AI. Ask me about web development, React, JavaScript, AI, or your next app idea.",
+      "Hi! I'm Nathan AI. Ask me about web development, React, JavaScript, AI, or your next app idea.",
   },
 ];
 
@@ -309,14 +309,17 @@ function App() {
     return <div className="auth-loading">Loading your chat...</div>;
   }
 
- return (
-  <main className="app">
-    {showSidebar && (
-      <>
-        <div
-          className="sidebar-overlay"
-          onClick={() => setShowSidebar(false)}
-        />
+  return (
+    <main className="app">
+      <button
+        className="toggle-sidebar-button"
+        onClick={() => setShowSidebar((s) => !s)}
+        aria-label="Toggle chat list"
+      >
+        ☰
+      </button>
+
+      {showSidebar && (
         <ChatSidebar
           session={session}
           activeConversationId={conversationId}
@@ -326,18 +329,7 @@ function App() {
           onDeleteChat={handleDeleteChat}
           onClose={() => setShowSidebar(false)}
         />
-      </>
-    )}
-
-    <button
-      className="toggle-sidebar-button"
-      onClick={() => setShowSidebar((s) => !s)}
-      aria-label="Toggle chat list"
-    >
-      ☰
-    </button>
-
-    
+      )}
 
       <section className="chat-card">
         <header className="chat-header">

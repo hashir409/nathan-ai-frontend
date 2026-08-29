@@ -44,7 +44,7 @@ export default function ChatSidebar({
   }, [session?.user?.id]);
 
   return (
-    <aside className="chat-sidebar" style={{ position: "fixed", left: 0, top: 0, zIndex: 1000 }}>
+    <aside className="chat-sidebar">
       <div className="sidebar-top-row">
         <button
           className="close-sidebar-button"
