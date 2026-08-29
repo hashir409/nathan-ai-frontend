@@ -23,7 +23,7 @@ function App() {
   const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState(null);
   const [chatLoading, setChatLoading] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
   const [conversationsTrigger, setConversationsTrigger] = useState(0);
 
   useEffect(() => {
@@ -320,15 +320,15 @@ function App() {
       </button>
 
       {showSidebar && (
-        <ChatSidebar
-          session={session}
-          activeConversationId={conversationId}
-          onNewChat={handleNewChat}
-          onSelectChat={handleSelectChat}
-          onRenameChat={handleRenameChat}
-          onDeleteChat={handleDeleteChat}
-          onClose={() => setShowSidebar(false)}
-        />
+       <ChatSidebar
+  session={session}
+  activeConversationId={conversationId}
+  onNewChat={handleNewChat}
+  onSelectChat={handleSelectChat}
+  onRenameChat={handleRenameChat}
+  onDeleteChat={handleDeleteChat}
+  onClose={() => {}}
+/>
       )}
 
       <section className="chat-card">
