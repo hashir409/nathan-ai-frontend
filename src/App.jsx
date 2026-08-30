@@ -311,14 +311,7 @@ function App() {
 
   return (
     <main className="app">
-      <button
-        className="toggle-sidebar-button"
-        onClick={() => setShowSidebar((s) => !s)}
-        aria-label="Toggle chat list"
-      >
-        ☰
-      </button>
-
+     
       {showSidebar && (
         <ChatSidebar
           session={session}
@@ -333,17 +326,26 @@ function App() {
 
       <section className="chat-card">
         <header className="chat-header">
-          <div className="logo">N</div>
+  <div className="header-info">
+    <div className="logo">N</div>
 
-          <div>
-            <h1>Nathan AI</h1>
-            <p>
-              <span className="status-dot" />
-              Online · Global AI assistant
-            </p>
-          </div>
-        </header>
+    <div>
+      <h1>Nathan AI</h1>
+      <p>
+        <span className="status-dot" />
+        Online · Global AI assistant
+      </p>
+    </div>
+  </div>
 
+  <button
+    type="button"
+    className="open-sidebar-button"
+    onClick={() => setShowSidebar(true)}
+  >
+    ☰ Chats
+  </button>
+</header>
         <div className="messages">
           {messages.map((message) => (
             <article

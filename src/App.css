@@ -398,4 +398,24 @@
     radial-gradient(circle at bottom right, #273b6d 0, transparent 32%),
     #0b1020;
   font-family: Inter, system-ui, sans-serif;
+}.header-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.open-sidebar-button {
+  margin-left: auto;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9px;
+  padding: 8px 12px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  background: #1f2937;
+  cursor: pointer;
+}
+
+.open-sidebar-button:hover {
+  background: #2d3a50;
 }
