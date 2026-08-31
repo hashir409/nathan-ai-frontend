@@ -27,6 +27,9 @@ function App() {
   const [conversationsTrigger, setConversationsTrigger] = useState(0);
    const [isSending, setIsSending] = useState(false);
 const messagesEndRef = useRef(null);
+const [copiedMessageId, setCopiedMessageId] = useState(null);
+const [feedbackByMessage, setFeedbackByMessage] = useState({});
+const [regeneratingMessageId, setRegeneratingMessageId] = useState(null);
   useEffect(() => {
     async function loadSession() {
       const {
@@ -248,7 +251,166 @@ useEffect(() => {
     });
   }
 }
+async function handleCopyResponse(message) {
+  try {
+    await navigator.clipboard.writeText(message.content);
+    setCopiedMessageId(message.id);
 
+    window.setTimeout(() => {
+      setCopiedMessageId(null);
+    }, 1800);
+  } catch (error) {
+    console.error("Could not copy response:", error);
+    alert("Could not copy this response.");
+  }
+}
+
+function handleFeedback(messageId, feedback) {
+  setFeedbackByMessage((currentFeedback) => ({
+    ...currentFeedback,
+    [messageId]:
+      currentFeedback[messageId] === feedback ? null : feedback,
+  }));
+}
+
+async function handleShareResponse(message) {
+  const shareData = {
+    title: "Nathan AI response",
+    text: message.content,
+  };
+
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData);
+      return;
+    }
+
+    await navigator.clipboard.writeText(message.content);
+    setCopiedMessageId(message.id);
+
+    window.setTimeout(() => {
+      setCopiedMessageId(null);
+    }, 1800);
+
+    alert("Sharing is not available in this browser. The response was copied instead.");
+  } catch (error) {
+    if (error.name !== "AbortError") {
+      console.error("Could not share response:", error);
+    }
+  }
+}
+
+async function handleRegenerateResponse(assistantMessageId) {
+  if (isSending || regeneratingMessageId) return;
+
+  const assistantIndex = messages.findIndex(
+    (message) => message.id === assistantMessageId,
+  );
+
+  if (assistantIndex === -1) return;
+
+  const previousUserMessage = [...messages]
+    .slice(0, assistantIndex)
+    .reverse()
+    .find((message) => message.role === "user");
+
+  if (!previousUserMessage) {
+    alert("No user prompt was found for this response.");
+    return;
+  }
+
+  setRegeneratingMessageId(assistantMessageId);
+  setIsSending(true);
+
+  setMessages((currentMessages) =>
+    currentMessages.map((message) =>
+      message.id === assistantMessageId
+        ? {
+            ...message,
+            content: "Nathan AI is regenerating this response...",
+            loading: true,
+          }
+        : message,
+    ),
+  );
+
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: previousUserMessage.content,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Nathan AI could not regenerate the response.");
+    }
+
+    const data = await response.json();
+
+    const regeneratedReply =
+      data.output ||
+      data.text ||
+      data.message ||
+      "Nathan AI sent a response, but its text format was not recognized.";
+
+    if (conversationId && !String(assistantMessageId).startsWith("assistant-")) {
+      const { error: updateError } = await supabase
+        .from("messages")
+        .update({
+          content: regeneratedReply,
+          created_at: new Date().toISOString(),
+        })
+        .eq("id", assistantMessageId);
+
+      if (updateError) throw updateError;
+
+      await supabase
+        .from("conversations")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", conversationId);
+    }
+
+    setMessages((currentMessages) =>
+      currentMessages.map((message) =>
+        message.id === assistantMessageId
+          ? {
+              ...message,
+              content: regeneratedReply,
+              loading: false,
+              created_at: new Date().toISOString(),
+            }
+          : message,
+      ),
+    );
+
+    setFeedbackByMessage((currentFeedback) => ({
+      ...currentFeedback,
+      [assistantMessageId]: null,
+    }));
+  } catch (error) {
+    console.error(error);
+
+    setMessages((currentMessages) =>
+      currentMessages.map((message) =>
+        message.id === assistantMessageId
+          ? {
+              ...message,
+              content:
+                "Sorry, Nathan AI could not regenerate this response. Please try again.",
+              loading: false,
+            }
+          : message,
+      ),
+    );
+  } finally {
+    setRegeneratingMessageId(null);
+    setIsSending(false);
+  }
+}
   async function handleNewChat() {
     setConversationId(null);
     setMessages(starterMessages);
@@ -411,7 +573,8 @@ useEffect(() => {
               </div>
 
               <div className="message-content">
-                <ReactMarkdown
+                <ReactMarkdown 
+                   
                   components={{
                     code({ className, children, ...props }) {
                       const match = /language-(\w+)/.exec(className || "");
@@ -448,6 +611,64 @@ useEffect(() => {
                 >
                   {message.content}
                 </ReactMarkdown>
+                {message.role === "assistant" && !message.loading && (
+  <div className="response-actions">
+    <button
+      type="button"
+      className={`response-action-button ${
+        copiedMessageId === message.id ? "selected" : ""
+      }`}
+      onClick={() => handleCopyResponse(message)}
+      title="Copy response"
+    >
+      {copiedMessageId === message.id ? "✓ Copied" : "⧉ Copy"}
+    </button>
+
+    <button
+      type="button"
+      className="response-action-button"
+      onClick={() => handleRegenerateResponse(message.id)}
+      disabled={isSending || regeneratingMessageId === message.id}
+      title="Regenerate response"
+    >
+      {regeneratingMessageId === message.id ? "↻ Regenerating..." : "↻ Regenerate"}
+    </button>
+
+    <button
+      type="button"
+      className={`response-action-icon ${
+        feedbackByMessage[message.id] === "like" ? "selected" : ""
+      }`}
+      onClick={() => handleFeedback(message.id, "like")}
+      title="Good response"
+      aria-label="Like response"
+    >
+      👍
+    </button>
+
+    <button
+      type="button"
+      className={`response-action-icon ${
+        feedbackByMessage[message.id] === "dislike" ? "selected dislike" : ""
+      }`}
+      onClick={() => handleFeedback(message.id, "dislike")}
+      title="Poor response"
+      aria-label="Dislike response"
+    >
+      👎
+    </button>
+
+    <button
+      type="button"
+      className="response-action-icon"
+      onClick={() => handleShareResponse(message)}
+      title="Share response"
+      aria-label="Share response"
+    >
+      ↗
+    </button>
+  </div>
+)}
               </div>
             </article>
           ))}
