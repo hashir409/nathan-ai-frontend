@@ -176,13 +176,14 @@
 
 .message-form {
   display: flex;
+  align-items: flex-end;
   gap: 10px;
   padding: 18px 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(8, 13, 28, 0.45);
 }
 
-.message-form input {
+.message-form textarea {
   min-width: 0;
   flex: 1;
   border: 1px solid #3a4a70;
@@ -194,7 +195,7 @@
   background: #131d36;
 }
 
-.message-form input:focus {
+.message-form textarea:focus {
   border-color: #7b63ff;
   box-shadow: 0 0 0 3px rgba(123, 99, 255, 0.2);
 }
@@ -207,6 +208,7 @@
   font-weight: 700;
   cursor: pointer;
   background: linear-gradient(135deg, #7c5cff, #439cff);
+  min-height: 52px;
 }
 
 .message-form button:hover {
@@ -453,7 +455,7 @@
   filter: grayscale(0.25);
 }
 
-.message-form input:disabled {
+.message-form textarea:disabled {
   cursor: not-allowed;
   opacity: 0.75;
 }

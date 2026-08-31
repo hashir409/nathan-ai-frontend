@@ -231,7 +231,23 @@ useEffect(() => {
     } finally {
       setIsSending(false);
     }
+  }function handleInputKeyDown(event) {
+  const isComposing = event.nativeEvent.isComposing;
+
+  if (
+    event.key === "Enter" &&
+    !event.shiftKey &&
+    !isComposing &&
+    !isSending &&
+    input.trim()
+  ) {
+    event.preventDefault();
+
+    handleSend({
+      preventDefault: () => {},
+    });
   }
+}
 
   async function handleNewChat() {
     setConversationId(null);
@@ -438,14 +454,15 @@ useEffect(() => {
         </div>
 
         <form className="message-form" onSubmit={handleSend}>
-          <input
-  type="text"
+        <textarea
   value={input}
+  onChange={(event) => setInput(event.target.value)}
+  onKeyDown={handleInputKeyDown}
   disabled={isSending}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="Ask Nathan AI anything..."
-            aria-label="Message Nathan AI"
-          />
+  placeholder="Ask Nathan AI anything..."
+  aria-label="Message Nathan AI"
+  rows={1}
+/>
           <button type="submit" disabled={isSending || !input.trim()}>
   {isSending ? "Thinking..." : "Send"}
 </button>
