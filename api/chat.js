@@ -37,26 +37,37 @@ export default async function handler(req, res) {
       apiKey: process.env.GEMINI_API_KEY,
     });
 
-    const response = await ai.models.generateContent({
-      model:  "gemini-3.6-flash",
+    const stream = await ai.models.generateContentStream({
+      model: "gemini-3.6-flash",
       contents: message,
       config: {
         systemInstruction,
       },
     });
 
-    const text =
-      response.text ||
-      "Sorry, I could not generate a response right now.";
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
 
-    return res.status(200).json({
-      output: text,
-    });
+    for await (const chunk of stream) {
+      const text = chunk.text || "";
+
+      if (text) {
+        res.write(text);
+      }
+    }
+
+    res.end();
   } catch (error) {
-    console.error("Gemini API error:", error);
+    console.error("Gemini streaming error:", error);
 
-    return res.status(500).json({
-      error: "Nathan AI is unavailable right now. Please try again.",
-    });
+    if (!res.headersSent) {
+      return res.status(500).json({
+        error: "Nathan AI is unavailable right now. Please try again.",
+      });
+    }
+
+    res.end();
   }
 }

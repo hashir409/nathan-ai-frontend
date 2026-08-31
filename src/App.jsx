@@ -181,14 +181,41 @@ useEffect(() => {
         throw new Error("Nathan AI could not respond right now.");
       }
 
-      const data = await response.json();
+      if (!response.body) {
+  throw new Error("Streaming response is not available.");
+}
 
-      const aiReply =
-        data.output ||
-        data.text ||
-        data.message ||
-        "Nathan AI sent a response, but its text format was not recognized.";
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
 
+let aiReply = "";
+
+while (true) {
+  const { done, value } = await reader.read();
+
+  if (done) {
+    break;
+  }
+
+  aiReply += decoder.decode(value, { stream: true });
+
+  setMessages((currentMessages) =>
+    currentMessages.map((message) =>
+      message.id === loadingMessageId
+        ? {
+            ...message,
+            content: aiReply,
+          }
+        : message,
+    ),
+  );
+}
+
+aiReply += decoder.decode();
+
+if (!aiReply.trim()) {
+  aiReply = "Sorry, I could not generate a response right now.";
+}
       const { error: saveAssistantMessageError } = await supabase
         .from("messages")
         .insert({
@@ -377,13 +404,42 @@ async function handleRegenerateResponse(assistantMessageId) {
       throw new Error("Nathan AI could not regenerate the response.");
     }
 
-    const data = await response.json();
+   if (!response.body) {
+  throw new Error("Streaming response is not available.");
+}
 
-    const regeneratedReply =
-      data.output ||
-      data.text ||
-      data.message ||
-      "Nathan AI sent a response, but its text format was not recognized.";
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+let regeneratedReply = "";
+
+while (true) {
+  const { done, value } = await reader.read();
+
+  if (done) {
+    break;
+  }
+
+  regeneratedReply += decoder.decode(value, { stream: true });
+
+  setMessages((currentMessages) =>
+    currentMessages.map((message) =>
+      message.id === assistantMessageId
+        ? {
+            ...message,
+            content: regeneratedReply,
+            loading: true,
+          }
+        : message,
+    ),
+  );
+}
+
+regeneratedReply += decoder.decode();
+
+if (!regeneratedReply.trim()) {
+  regeneratedReply = "Sorry, I could not generate a response right now.";
+}
 
     if (conversationId && !String(assistantMessageId).startsWith("assistant-")) {
       const { error: updateError } = await supabase
