@@ -509,4 +509,12 @@
 .response-action-icon:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}.regenerated-label {
+  border: 1px solid rgba(124, 92, 255, 0.45);
+  border-radius: 7px;
+  padding: 5px 8px;
+  color: #d9d0ff;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(124, 92, 255, 0.16);
 }

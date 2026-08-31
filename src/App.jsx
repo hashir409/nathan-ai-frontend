@@ -84,7 +84,7 @@ const [regeneratingMessageId, setRegeneratingMessageId] = useState(null);
 
       const { data: savedMessages, error: messagesError } = await supabase
         .from("messages")
-        .select("id, role, content, created_at, feedback")
+         .select("id, role, content, created_at, feedback, regenerated")
         .eq("conversation_id", latestConversation.id)
         .order("created_at", { ascending: true });
 
@@ -388,10 +388,12 @@ async function handleRegenerateResponse(assistantMessageId) {
     if (conversationId && !String(assistantMessageId).startsWith("assistant-")) {
       const { error: updateError } = await supabase
         .from("messages")
-        .update({
-          content: regeneratedReply,
-          created_at: new Date().toISOString(),
-        })
+       .update({
+  content: regeneratedReply,
+  created_at: new Date().toISOString(),
+  regenerated: true,
+  feedback: null,
+})
         .eq("id", assistantMessageId);
 
       if (updateError) throw updateError;
@@ -405,12 +407,14 @@ async function handleRegenerateResponse(assistantMessageId) {
     setMessages((currentMessages) =>
       currentMessages.map((message) =>
         message.id === assistantMessageId
-          ? {
-              ...message,
-              content: regeneratedReply,
-              loading: false,
-              created_at: new Date().toISOString(),
-            }
+         ? {
+  ...message,
+  content: regeneratedReply,
+  loading: false,
+  created_at: new Date().toISOString(),
+  regenerated: true,
+  feedback: null,
+}
           : message,
       ),
     );
@@ -639,8 +643,11 @@ async function handleRegenerateResponse(assistantMessageId) {
                 >
                   {message.content}
                 </ReactMarkdown>
-                {message.role === "assistant" && !message.loading && (
+             {message.role === "assistant" && !message.loading && (
   <div className="response-actions">
+    {message.regenerated && (
+      <span className="regenerated-label">↻ Regenerated</span>
+    )}
     <button
       type="button"
       className={`response-action-button ${
