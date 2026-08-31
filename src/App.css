@@ -447,4 +447,13 @@
 
 .logout-button:hover {
   background: rgba(190, 55, 65, 0.5);
+}.message-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  filter: grayscale(0.25);
+}
+
+.message-form input:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
 }

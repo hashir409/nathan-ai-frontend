@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -25,7 +25,8 @@ function App() {
   const [chatLoading, setChatLoading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [conversationsTrigger, setConversationsTrigger] = useState(0);
-
+   const [isSending, setIsSending] = useState(false);
+const messagesEndRef = useRef(null);
   useEffect(() => {
     async function loadSession() {
       const {
@@ -97,15 +98,20 @@ function App() {
 
     loadLatestConversation();
   }, [session?.user?.id, conversationsTrigger]);
-
+useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({
+    behavior: "smooth",
+    block: "end",
+  });
+}, [messages]);
   async function handleSend(event) {
     event.preventDefault();
 
     const text = input.trim();
     const userId = session?.user?.id;
 
-    if (!text || !userId) return;
-
+    if (!text || !userId || isSending) return;
+     setIsSending(true);
     const localUserMessage = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -207,7 +213,7 @@ function App() {
             : message,
         ),
       );
-    } catch (error) {
+       } catch (error) {
       console.error(error);
 
       setMessages((currentMessages) =>
@@ -222,6 +228,8 @@ function App() {
             : message,
         ),
       );
+    } finally {
+      setIsSending(false);
     }
   }
 
@@ -383,6 +391,7 @@ function App() {
             >
               <div className="message-label">
                 {message.role === "assistant" ? "Nathan AI" : "You"}
+                <div ref={messagesEndRef} />
               </div>
 
               <div className="message-content">
@@ -430,14 +439,16 @@ function App() {
 
         <form className="message-form" onSubmit={handleSend}>
           <input
-            type="text"
-            value={input}
+  type="text"
+  value={input}
+  disabled={isSending}
             onChange={(event) => setInput(event.target.value)}
             placeholder="Ask Nathan AI anything..."
             aria-label="Message Nathan AI"
           />
-
-          <button type="submit">Send</button>
+          <button type="submit" disabled={isSending || !input.trim()}>
+  {isSending ? "Thinking..." : "Send"}
+</button>
         </form>
       </section>
     </main>
