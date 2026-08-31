@@ -295,7 +295,22 @@ function App() {
     }
 
     setConversationsTrigger((n) => n + 1);
+  }async function handleLogout() {
+  const confirmed = window.confirm("Do you want to log out of Nathan AI?");
+  if (!confirmed) return;
+
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    console.error("Could not log out:", error);
+    alert("Could not log out. Please try again.");
+    return;
   }
+
+  setConversationId(null);
+  setMessages(starterMessages);
+  setShowSidebar(false);
+}
 
   if (authLoading) {
     return <div className="auth-loading">Loading Nathan AI...</div>;
@@ -325,7 +340,7 @@ function App() {
       )}
 
       <section className="chat-card">
-        <header className="chat-header">
+     <header className="chat-header">
   <div className="header-info">
     <div className="logo">N</div>
 
@@ -338,13 +353,27 @@ function App() {
     </div>
   </div>
 
-  <button
-    type="button"
-    className="open-sidebar-button"
-    onClick={() => setShowSidebar(true)}
-  >
-    ☰ Chats
-  </button>
+  <div className="header-actions">
+    <div className="user-email" title={session.user.email}>
+      {session.user.email}
+    </div>
+
+    <button
+      type="button"
+      className="open-sidebar-button"
+      onClick={() => setShowSidebar(true)}
+    >
+      ☰ Chats
+    </button>
+
+    <button
+      type="button"
+      className="logout-button"
+      onClick={handleLogout}
+    >
+      Log out
+    </button>
+  </div>
 </header>
         <div className="messages">
           {messages.map((message) => (

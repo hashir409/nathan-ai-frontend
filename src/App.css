@@ -418,4 +418,33 @@
 
 .open-sidebar-button:hover {
   background: #2d3a50;
+}.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.user-email {
+  max-width: 210px;
+  overflow: hidden;
+  color: #aab6d3;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logout-button {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9px;
+  padding: 8px 12px;
+  color: #ffd3d3;
+  font-size: 14px;
+  font-weight: 700;
+  background: rgba(160, 45, 55, 0.28);
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  background: rgba(190, 55, 65, 0.5);
 }
