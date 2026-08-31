@@ -84,7 +84,7 @@ const [regeneratingMessageId, setRegeneratingMessageId] = useState(null);
 
       const { data: savedMessages, error: messagesError } = await supabase
         .from("messages")
-        .select("id, role, content, created_at")
+        .select("id, role, content, created_at, feedback")
         .eq("conversation_id", latestConversation.id)
         .order("created_at", { ascending: true });
 
@@ -265,12 +265,40 @@ async function handleCopyResponse(message) {
   }
 }
 
-function handleFeedback(messageId, feedback) {
-  setFeedbackByMessage((currentFeedback) => ({
-    ...currentFeedback,
-    [messageId]:
-      currentFeedback[messageId] === feedback ? null : feedback,
+async function handleFeedback(messageId, feedback) {
+  const currentFeedback =
+    feedbackByMessage[messageId] ||
+    messages.find((message) => message.id === messageId)?.feedback ||
+    null;
+
+  const nextFeedback = currentFeedback === feedback ? null : feedback;
+
+  setFeedbackByMessage((currentFeedbackMap) => ({
+    ...currentFeedbackMap,
+    [messageId]: nextFeedback,
   }));
+
+  const isLocalMessage = String(messageId).startsWith("assistant-");
+
+  if (isLocalMessage) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("messages")
+    .update({ feedback: nextFeedback })
+    .eq("id", messageId);
+
+  if (error) {
+    console.error("Could not save feedback:", error);
+
+    setFeedbackByMessage((currentFeedbackMap) => ({
+      ...currentFeedbackMap,
+      [messageId]: currentFeedback,
+    }));
+
+    alert("Could not save your feedback. Please try again.");
+  }
 }
 
 async function handleShareResponse(message) {
@@ -424,7 +452,7 @@ async function handleRegenerateResponse(assistantMessageId) {
 
     const { data: savedMessages, error } = await supabase
       .from("messages")
-      .select("id, role, content, created_at")
+      .select("id, role, content, created_at, feedback")
       .eq("conversation_id", id)
       .order("created_at", { ascending: true });
 
@@ -637,8 +665,10 @@ async function handleRegenerateResponse(assistantMessageId) {
     <button
       type="button"
       className={`response-action-icon ${
-        feedbackByMessage[message.id] === "like" ? "selected" : ""
-      }`}
+  (feedbackByMessage[message.id] ?? message.feedback) === "like"
+    ? "selected"
+    : ""
+}`}
       onClick={() => handleFeedback(message.id, "like")}
       title="Good response"
       aria-label="Like response"
@@ -649,8 +679,10 @@ async function handleRegenerateResponse(assistantMessageId) {
     <button
       type="button"
       className={`response-action-icon ${
-        feedbackByMessage[message.id] === "dislike" ? "selected dislike" : ""
-      }`}
+  (feedbackByMessage[message.id] ?? message.feedback) === "dislike"
+    ? "selected dislike"
+    : ""
+}`}
       onClick={() => handleFeedback(message.id, "dislike")}
       title="Poor response"
       aria-label="Dislike response"
