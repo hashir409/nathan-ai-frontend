@@ -927,4 +927,199 @@
   .activity-label {
     font-size: 0.64rem;
   }
+}.user-management-section {
+  margin-top: 2px;
+}
+
+.user-search-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.user-search-form input {
+  min-width: 0;
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  font: inherit;
+}
+
+.user-search-form input:focus {
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15);
+}
+
+.user-search-form button,
+.user-pagination button,
+.user-action-button {
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: #fff;
+  font: inherit;
+  font-size: 0.83rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.user-search-form button {
+  background: #7c3aed;
+}
+
+.user-search-form button:hover:not(:disabled) {
+  background: #8b5cf6;
+}
+
+.user-clear-search {
+  background: rgba(255, 255, 255, 0.11) !important;
+}
+
+.user-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.user-table {
+  width: 100%;
+  min-width: 790px;
+  border-collapse: collapse;
+}
+
+.user-table th,
+.user-table td {
+  padding: 13px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.user-table th {
+  background: rgba(255, 255, 255, 0.055);
+  color: #aeb8ce;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.user-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.user-table td strong {
+  display: block;
+  max-width: 190px;
+  overflow: hidden;
+  color: #f8fafc;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-table-empty {
+  padding: 26px !important;
+  color: #aeb8ce !important;
+  text-align: center !important;
+}
+
+.unverified-user {
+  display: block;
+  margin-top: 4px;
+  color: #fbbf24;
+  font-size: 0.7rem;
+}
+
+.user-status {
+  display: inline-block;
+  max-width: 170px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.user-status-active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+}
+
+.user-status-banned {
+  background: rgba(248, 113, 113, 0.15);
+  color: #fca5a5;
+}
+
+.user-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.user-ban-button {
+  background: #b45309;
+}
+
+.user-ban-button:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.user-unban-button {
+  background: #047857;
+}
+
+.user-unban-button:hover:not(:disabled) {
+  background: #059669;
+}
+
+.user-delete-button {
+  background: #b91c1c;
+}
+
+.user-delete-button:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.user-search-form button:disabled,
+.user-pagination button:disabled,
+.user-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.user-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 15px;
+  color: #aeb8ce;
+  font-size: 0.8rem;
+}
+
+.user-pagination button {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.user-pagination button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+@media (max-width: 560px) {
+  .user-search-form {
+    flex-wrap: wrap;
+  }
+
+  .user-search-form input {
+    flex-basis: 100%;
+  }
+
+  .user-pagination {
+    justify-content: space-between;
+  }
 }

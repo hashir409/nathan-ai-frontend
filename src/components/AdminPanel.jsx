@@ -17,7 +17,13 @@ export default function AdminPanel({ onClose }) {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const [users, setUsers] = useState([]);
+const [usersLoading, setUsersLoading] = useState(false);
+const [usersError, setUsersError] = useState("");
+const [userSearch, setUserSearch] = useState("");
+const [userPage, setUserPage] = useState(1);
+const [hasNextUserPage, setHasNextUserPage] = useState(false);
+const [userActionId, setUserActionId] = useState(null);
   async function loadDashboard() {
     setLoading(true);
     setError("");
@@ -55,10 +61,130 @@ export default function AdminPanel({ onClose }) {
       setLoading(false);
     }
   }
+async function getAdminHeaders() {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
 
+  if (sessionError) throw sessionError;
+
+  if (!session?.access_token) {
+    throw new Error("Please log in again.");
+  }
+
+  return {
+    Authorization: `Bearer ${session.access_token}`,
+    "Content-Type": "application/json",
+  };
+}
+
+async function loadUsers(page = 1, search = userSearch) {
+  setUsersLoading(true);
+  setUsersError("");
+
+  try {
+    const headers = await getAdminHeaders();
+    const params = new URLSearchParams({
+      page: String(page),
+    });
+
+    if (search.trim()) {
+      params.set("search", search.trim());
+    }
+
+    const response = await fetch(`/api/admin-users?${params.toString()}`, {
+      headers,
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Could not load users.");
+    }
+
+    setUsers(result.users || []);
+    setUserPage(result.page || page);
+    setHasNextUserPage(Boolean(result.hasNextPage));
+  } catch (loadError) {
+    console.error(loadError);
+    setUsersError(loadError.message || "Could not load users.");
+  } finally {
+    setUsersLoading(false);
+  }
+}
+
+async function handleUserAction(user, action) {
+  const isBan = action === "ban";
+  const message = isBan
+    ? `Ban ${user.email}? They will not be able to sign in.`
+    : `Unban ${user.email}?`;
+
+  if (!window.confirm(message)) return;
+
+  if (
+    action === "delete" &&
+    !window.confirm(
+      `FINAL CONFIRMATION: Soft-delete ${user.email}? This action cannot be undone.`,
+    )
+  ) {
+    return;
+  }
+
+  setUserActionId(user.id);
+  setUsersError("");
+
+  try {
+    const headers = await getAdminHeaders();
+
+    const response = await fetch("/api/admin-users", {
+      method: action === "delete" ? "DELETE" : "PATCH",
+      headers,
+      body: JSON.stringify(
+        action === "delete"
+          ? { userId: user.id }
+          : { userId: user.id, action },
+      ),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Could not update this user.");
+    }
+
+    await Promise.all([
+      loadUsers(userPage),
+      loadDashboard(),
+    ]);
+  } catch (actionError) {
+    console.error(actionError);
+    setUsersError(actionError.message || "Could not update this user.");
+  } finally {
+    setUserActionId(null);
+  }
+}
+
+function handleUserSearchSubmit(event) {
+  event.preventDefault();
+  loadUsers(1, userSearch);
+}
+
+function formatBanStatus(user) {
+  if (!user.banned_until) return "Active";
+
+  const bannedUntil = new Date(user.banned_until);
+
+  if (Number.isNaN(bannedUntil.getTime()) || bannedUntil <= new Date()) {
+    return "Active";
+  }
+
+  return `Banned until ${formatDate(user.banned_until)}`;
+}
   useEffect(() => {
-    loadDashboard();
-  }, []);
+  loadDashboard();
+  loadUsers(1, "");
+}, []);
 
   const activity = dashboard?.analytics?.activityLast7Days || [];
   const maxActivity = Math.max(
@@ -109,7 +235,152 @@ export default function AdminPanel({ onClose }) {
         )}
 
         {dashboard && (
-          <>
+          <><section className="analytics-section user-management-section">
+  <div className="analytics-section-heading">
+    <div>
+      <p className="admin-eyebrow">Account controls</p>
+      <h3>User management</h3>
+    </div>
+  </div>
+
+  <form className="user-search-form" onSubmit={handleUserSearchSubmit}>
+    <input
+      type="search"
+      value={userSearch}
+      onChange={(event) => setUserSearch(event.target.value)}
+      placeholder="Search by email..."
+      aria-label="Search users by email"
+    />
+
+    <button type="submit" disabled={usersLoading}>
+      Search
+    </button>
+
+    {userSearch && (
+      <button
+        className="user-clear-search"
+        type="button"
+        onClick={() => {
+          setUserSearch("");
+          loadUsers(1, "");
+        }}
+        disabled={usersLoading}
+      >
+        Clear
+      </button>
+    )}
+  </form>
+
+  {usersError && <p className="admin-error">{usersError}</p>}
+
+  {usersLoading ? (
+    <p className="admin-loading">Loading users...</p>
+  ) : (
+    <div className="user-table-wrap">
+      <table className="user-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Joined</th>
+            <th>Last sign in</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {users.length === 0 ? (
+            <tr>
+              <td colSpan="5" className="user-table-empty">
+                No users found.
+              </td>
+            </tr>
+          ) : (
+            users.map((user) => {
+              const isBanned =
+                user.banned_until &&
+                new Date(user.banned_until) > new Date();
+              const isBusy = userActionId === user.id;
+
+              return (
+                <tr key={user.id}>
+                  <td>
+                    <strong>{user.email}</strong>
+                    {!user.email_confirmed_at && (
+                      <small className="unverified-user">Email not confirmed</small>
+                    )}
+                  </td>
+                  <td>{formatDate(user.created_at)}</td>
+                  <td>{formatDate(user.last_sign_in_at)}</td>
+                  <td>
+                    <span
+                      className={`user-status ${
+                        isBanned ? "user-status-banned" : "user-status-active"
+                      }`}
+                    >
+                      {formatBanStatus(user)}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="user-actions">
+                      <button
+                        type="button"
+                        className={
+                          isBanned
+                            ? "user-action-button user-unban-button"
+                            : "user-action-button user-ban-button"
+                        }
+                        onClick={() =>
+                          handleUserAction(user, isBanned ? "unban" : "ban")
+                        }
+                        disabled={isBusy}
+                      >
+                        {isBusy
+                          ? "Please wait..."
+                          : isBanned
+                            ? "Unban"
+                            : "Ban"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="user-action-button user-delete-button"
+                        onClick={() => handleUserAction(user, "delete")}
+                        disabled={isBusy}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
+  )}
+
+  <div className="user-pagination">
+    <button
+      type="button"
+      onClick={() => loadUsers(userPage - 1)}
+      disabled={usersLoading || userPage <= 1}
+    >
+      Previous
+    </button>
+
+    <span>Page {userPage}</span>
+
+    <button
+      type="button"
+      onClick={() => loadUsers(userPage + 1)}
+      disabled={usersLoading || !hasNextUserPage}
+    >
+      Next
+    </button>
+  </div>
+</section>
             <div className="admin-stats-grid">
               <article className="admin-stat-card">
                 <span>Total users</span>
