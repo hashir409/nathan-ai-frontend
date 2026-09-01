@@ -16,7 +16,68 @@ const starterMessages = [
       "Hi! I'm Nathan AI. Ask me about web development, React, JavaScript, AI, or your next app idea.",
   },
 ];
+const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 
+const ALLOWED_ATTACHMENT_EXTENSIONS = new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "webp",
+  "pdf",
+  "txt",
+  "md",
+  "js",
+  "jsx",
+  "ts",
+  "tsx",
+  "html",
+  "css",
+  "json",
+  "py",
+]);
+
+function getFileExtension(fileName = "") {
+  const lastDot = fileName.lastIndexOf(".");
+
+  if (lastDot === -1) return "";
+
+  return fileName.slice(lastDot + 1).toLowerCase();
+}
+
+function normalizeAttachmentType(file) {
+  if (file.type && file.type !== "application/octet-stream") {
+    return file.type;
+  }
+
+  const extension = getFileExtension(file.name);
+
+  const typesByExtension = {
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+    pdf: "application/pdf",
+    txt: "text/plain",
+    md: "text/markdown",
+    js: "text/javascript",
+    jsx: "text/jsx",
+    ts: "text/typescript",
+    tsx: "text/tsx",
+    html: "text/html",
+    css: "text/css",
+    json: "application/json",
+    py: "text/x-python",
+  };
+
+  return typesByExtension[extension] || "application/octet-stream";
+}
+
+function safeFileName(fileName = "") {
+  return fileName
+    .replace(/[^a-zA-Z0-9._-]/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 100);
+}
 function App() {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -31,6 +92,9 @@ const messagesEndRef = useRef(null);
 const [copiedMessageId, setCopiedMessageId] = useState(null);
 const [feedbackByMessage, setFeedbackByMessage] = useState({});
 const [regeneratingMessageId, setRegeneratingMessageId] = useState(null);
+const [selectedAttachment, setSelectedAttachment] = useState(null);
+const [attachmentError, setAttachmentError] = useState("");
+const [uploadingAttachment, setUploadingAttachment] = useState(false);
 const [showAdminPanel, setShowAdminPanel] = useState(false);
   useEffect(() => {
     async function loadSession() {
@@ -86,7 +150,9 @@ const [showAdminPanel, setShowAdminPanel] = useState(false);
 
       const { data: savedMessages, error: messagesError } = await supabase
         .from("messages")
-         .select("id, role, content, created_at, feedback, regenerated")
+         .select(
+  "id, role, content, created_at, feedback, regenerated, attachment_name, attachment_path, attachment_type, attachment_size",
+)
         .eq("conversation_id", latestConversation.id)
         .order("created_at", { ascending: true });
 
@@ -109,160 +175,276 @@ useEffect(() => {
     block: "end",
   });
 }, [messages]);
-  async function handleSend(event) {
-    event.preventDefault();
+function handleAttachmentChange(event) {
+  const file = event.target.files?.[0];
 
-    const text = input.trim();
-    const userId = session?.user?.id;
+  event.target.value = "";
 
-    if (!text || !userId || isSending) return;
-     setIsSending(true);
-    const localUserMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: text,
-    };
+  if (!file) return;
 
-    const loadingMessageId = `assistant-${Date.now()}`;
+  const extension = getFileExtension(file.name);
 
-    setMessages((currentMessages) => [...currentMessages, localUserMessage]);
-    setInput("");
-
-    setMessages((currentMessages) => [
-      ...currentMessages,
-      {
-        id: loadingMessageId,
-        role: "assistant",
-        content: "Nathan AI is thinking...",
-        loading: true,
-      },
-    ]);
-
-    try {
-      let activeConversationId = conversationId;
-
-      if (!activeConversationId) {
-        const { data: newConversation, error: createConversationError } =
-          await supabase
-            .from("conversations")
-            .insert({
-              user_id: userId,
-              title: text.slice(0, 60),
-            })
-            .select("id")
-            .single();
-
-        if (createConversationError) throw createConversationError;
-
-        activeConversationId = newConversation.id;
-        setConversationId(activeConversationId);
-      }
-
-      const { error: saveUserMessageError } = await supabase
-        .from("messages")
-        .insert({
-          conversation_id: activeConversationId,
-          user_id: userId,
-          role: "user",
-          content: text,
-        });
-
-      if (saveUserMessageError) throw saveUserMessageError;
-
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: text,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Nathan AI could not respond right now.");
-      }
-
-      if (!response.body) {
-  throw new Error("Streaming response is not available.");
-}
-
-const reader = response.body.getReader();
-const decoder = new TextDecoder();
-
-let aiReply = "";
-
-while (true) {
-  const { done, value } = await reader.read();
-
-  if (done) {
-    break;
+  if (!ALLOWED_ATTACHMENT_EXTENSIONS.has(extension)) {
+    setAttachmentError(
+      "Unsupported file. Use PNG, JPG, WEBP, PDF, TXT, MD, JS, JSX, TS, TSX, HTML, CSS, JSON, or PY.",
+    );
+    return;
   }
 
-  aiReply += decoder.decode(value, { stream: true });
+  if (file.size <= 0) {
+    setAttachmentError("This file is empty.");
+    return;
+  }
 
-  setMessages((currentMessages) =>
-    currentMessages.map((message) =>
-      message.id === loadingMessageId
-        ? {
-            ...message,
-            content: aiReply,
-          }
-        : message,
-    ),
-  );
+  if (file.size > MAX_ATTACHMENT_SIZE) {
+    setAttachmentError("File is too large. Maximum size is 5 MB.");
+    return;
+  }
+
+  setAttachmentError("");
+  setSelectedAttachment({
+    file,
+    name: file.name,
+    type: normalizeAttachmentType(file),
+    size: file.size,
+  });
 }
 
-aiReply += decoder.decode();
+function removeAttachment() {
+  if (uploadingAttachment || isSending) return;
 
-if (!aiReply.trim()) {
-  aiReply = "Sorry, I could not generate a response right now.";
+  setSelectedAttachment(null);
+  setAttachmentError("");
 }
-      const { error: saveAssistantMessageError } = await supabase
-        .from("messages")
-        .insert({
-          conversation_id: activeConversationId,
-          user_id: userId,
-          role: "assistant",
-          content: aiReply,
-        });
 
-      if (saveAssistantMessageError) throw saveAssistantMessageError;
+async function uploadAttachment(userId, attachment) {
+  const extension = getFileExtension(attachment.name);
+  const randomId = crypto.randomUUID();
+  const storagePath = `${userId}/${randomId}-${safeFileName(attachment.name)}`;
 
-      await supabase
-        .from("conversations")
-        .update({ updated_at: new Date().toISOString() })
-        .eq("id", activeConversationId);
+  const { error: uploadError } = await supabase.storage
+    .from("chat-attachments")
+    .upload(storagePath, attachment.file, {
+      contentType: attachment.type,
+      upsert: false,
+    });
+
+  if (uploadError) {
+    throw new Error("Could not upload attachment. Please try again.");
+  }
+
+  return {
+    name: attachment.name,
+    path: storagePath,
+    type: attachment.type,
+    size: attachment.size,
+    extension,
+  };
+}
+ async function handleSend(event) {
+  event.preventDefault();
+
+  const text = input.trim();
+  const userId = session?.user?.id;
+  const attachmentToSend = selectedAttachment;
+
+  if (
+    (!text && !attachmentToSend) ||
+    !userId ||
+    isSending ||
+    uploadingAttachment
+  ) {
+    return;
+  }
+
+  setIsSending(true);
+  setAttachmentError("");
+
+  const localUserMessage = {
+    id: `user-${Date.now()}`,
+    role: "user",
+    content: text || `Attached file: ${attachmentToSend.name}`,
+    attachment_name: attachmentToSend?.name || null,
+attachment_type: attachmentToSend?.type || null,
+attachment_size: attachmentToSend?.size || null,
+  };
+
+  const loadingMessageId = `assistant-${Date.now()}`;
+
+  setMessages((currentMessages) => [...currentMessages, localUserMessage]);
+  setInput("");
+  setSelectedAttachment(null);
+
+  setMessages((currentMessages) => [
+    ...currentMessages,
+    {
+      id: loadingMessageId,
+      role: "assistant",
+      content: "Nathan AI is thinking...",
+      loading: true,
+    },
+  ]);
+
+  let uploadedAttachment = null;
+
+  try {
+    setUploadingAttachment(Boolean(attachmentToSend));
+
+    if (attachmentToSend) {
+      uploadedAttachment = await uploadAttachment(userId, attachmentToSend);
+    }
+
+    let activeConversationId = conversationId;
+
+    if (!activeConversationId) {
+      const { data: newConversation, error: createConversationError } =
+        await supabase
+          .from("conversations")
+          .insert({
+            user_id: userId,
+            title: text || `File: ${attachmentToSend.name}`,
+          })
+          .select("id")
+          .single();
+
+      if (createConversationError) throw createConversationError;
+
+      activeConversationId = newConversation.id;
+      setConversationId(activeConversationId);
+    }
+
+    const { error: saveUserMessageError } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: activeConversationId,
+        user_id: userId,
+        role: "user",
+        content: text || `Attached file: ${uploadedAttachment.name}`,
+        attachment_name: uploadedAttachment?.name || null,
+        attachment_path: uploadedAttachment?.path || null,
+        attachment_type: uploadedAttachment?.type || null,
+        attachment_size: uploadedAttachment?.size || null,
+      });
+
+    if (saveUserMessageError) throw saveUserMessageError;
+
+    const {
+      data: { session: latestSession },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !latestSession?.access_token) {
+      throw new Error("Please log in again before sending an attachment.");
+    }
+
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${latestSession.access_token}`,
+      },
+      body: JSON.stringify({
+        message: text,
+        attachment: uploadedAttachment
+          ? {
+              name: uploadedAttachment.name,
+              path: uploadedAttachment.path,
+              type: uploadedAttachment.type,
+              size: uploadedAttachment.size,
+            }
+          : null,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Nathan AI could not respond right now.");
+    }
+
+    if (!response.body) {
+      throw new Error("Streaming response is not available.");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    let aiReply = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) break;
+
+      aiReply += decoder.decode(value, { stream: true });
 
       setMessages((currentMessages) =>
         currentMessages.map((message) =>
           message.id === loadingMessageId
             ? {
-                id: `assistant-saved-${Date.now()}`,
-                role: "assistant",
+                ...message,
                 content: aiReply,
               }
             : message,
         ),
       );
-       } catch (error) {
-      console.error(error);
-
-      setMessages((currentMessages) =>
-        currentMessages.map((message) =>
-          message.id === loadingMessageId
-            ? {
-                id: `assistant-error-${Date.now()}`,
-                role: "assistant",
-                content:
-                  "Sorry, Nathan AI is unavailable right now. Please try again.",
-              }
-            : message,
-        ),
-      );
-    } finally {
-      setIsSending(false);
     }
+
+    aiReply += decoder.decode();
+
+    if (!aiReply.trim()) {
+      aiReply = "Sorry, I could not generate a response right now.";
+    }
+
+    const { error: saveAssistantMessageError } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: activeConversationId,
+        user_id: userId,
+        role: "assistant",
+        content: aiReply,
+      });
+
+    if (saveAssistantMessageError) throw saveAssistantMessageError;
+
+    await supabase
+      .from("conversations")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", activeConversationId);
+
+    setMessages((currentMessages) =>
+      currentMessages.map((message) =>
+        message.id === loadingMessageId
+          ? {
+              id: `assistant-saved-${Date.now()}`,
+              role: "assistant",
+              content: aiReply,
+            }
+          : message,
+      ),
+    );
+  } catch (error) {
+    console.error(error);
+
+    
+
+    setMessages((currentMessages) =>
+      currentMessages.map((message) =>
+        message.id === loadingMessageId
+          ? {
+              id: `assistant-error-${Date.now()}`,
+              role: "assistant",
+              content:
+                "Sorry, Nathan AI could not process your request. Please try again.",
+            }
+          : message,
+      ),
+    );
+
+    setAttachmentError(error.message || "Could not send this attachment.");
+  } finally {
+    setUploadingAttachment(false);
+    setIsSending(false);
+  }
+
   }function handleInputKeyDown(event) {
   const isComposing = event.nativeEvent.isComposing;
 
@@ -514,7 +696,9 @@ if (!regeneratedReply.trim()) {
 
     const { data: savedMessages, error } = await supabase
       .from("messages")
-      .select("id, role, content, created_at, feedback")
+      .select(
+  "id, role, content, created_at, feedback, regenerated, attachment_name, attachment_path, attachment_type, attachment_size",
+)
       .eq("conversation_id", id)
       .order("created_at", { ascending: true });
 
@@ -582,7 +766,7 @@ if (!regeneratedReply.trim()) {
     alert("Could not log out. Please try again.");
     return;
   }
-
+  setShowAdminPanel(false);
   setConversationId(null);
   setMessages(starterMessages);
   setShowSidebar(false);
@@ -676,6 +860,12 @@ if (!regeneratedReply.trim()) {
               </div>
 
               <div className="message-content">
+                {message.attachment_name && (
+  <div className="message-attachment">
+    <span>📎</span>
+    <span>{message.attachment_name}</span>
+  </div>
+)}
                 <ReactMarkdown 
                    
                   components={{
@@ -785,6 +975,39 @@ if (!regeneratedReply.trim()) {
         </div>
 
         <form className="message-form" onSubmit={handleSend}>
+          <div className="attachment-controls">
+  <label className="attachment-button" title="Attach a file">
+    <input
+      type="file"
+      accept=".png,.jpg,.jpeg,.webp,.pdf,.txt,.md,.js,.jsx,.ts,.tsx,.html,.css,.json,.py"
+      onChange={handleAttachmentChange}
+      disabled={isSending || uploadingAttachment}
+    />
+    📎 Attach
+  </label>
+
+  {selectedAttachment && (
+    <div className="selected-attachment">
+      <span title={selectedAttachment.name}>
+        📄 {selectedAttachment.name}
+      </span>
+
+      <button
+        type="button"
+        onClick={removeAttachment}
+        disabled={isSending || uploadingAttachment}
+        aria-label="Remove selected attachment"
+        title="Remove attachment"
+      >
+        ×
+      </button>
+    </div>
+  )}
+</div>
+
+{attachmentError && (
+  <p className="attachment-error">{attachmentError}</p>
+)}
         <textarea
   value={input}
   onChange={(event) => setInput(event.target.value)}
@@ -794,8 +1017,19 @@ if (!regeneratedReply.trim()) {
   aria-label="Message Nathan AI"
   rows={1}
 />
-          <button type="submit" disabled={isSending || !input.trim()}>
-  {isSending ? "Thinking..." : "Send"}
+          <button
+  type="submit"
+  disabled={
+    isSending ||
+    uploadingAttachment ||
+    (!input.trim() && !selectedAttachment)
+  }
+>
+  {uploadingAttachment
+    ? "Uploading..."
+    : isSending
+      ? "Thinking..."
+      : "Send"}
 </button>
         </form>
       </section>

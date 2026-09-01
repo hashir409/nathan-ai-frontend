@@ -1123,3 +1123,112 @@
     justify-content: space-between;
   }
 }
+.attachment-controls {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 8px;
+}
+
+.attachment-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(167, 139, 250, 0.6);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(124, 58, 237, 0.16);
+  color: #e9d5ff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.attachment-button:hover {
+  border-color: #a78bfa;
+  background: rgba(124, 58, 237, 0.34);
+}
+
+.attachment-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.selected-attachment {
+  display: inline-flex;
+  max-width: min(100%, 430px);
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  padding: 7px 8px 7px 10px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 8px;
+  background: rgba(14, 116, 144, 0.15);
+  color: #bae6fd;
+  font-size: 0.8rem;
+}
+
+.selected-attachment span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-attachment button {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 5px;
+  padding: 0 5px;
+  background: transparent;
+  color: #e0f2fe;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.selected-attachment button:hover {
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.attachment-error {
+  margin: 0 0 8px;
+  color: #fca5a5;
+  font-size: 0.8rem;
+}
+
+.message-attachment {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 12px;
+  padding: 7px 10px;
+  overflow: hidden;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 8px;
+  background: rgba(14, 116, 144, 0.12);
+  color: #bae6fd;
+  font-size: 0.82rem;
+}
+
+.message-attachment span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .attachment-controls {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .selected-attachment {
+    max-width: 100%;
+  }
+}
