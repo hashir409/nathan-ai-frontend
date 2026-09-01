@@ -1,3 +1,4 @@
+import AdminPanel from "./components/AdminPanel";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -30,6 +31,7 @@ const messagesEndRef = useRef(null);
 const [copiedMessageId, setCopiedMessageId] = useState(null);
 const [feedbackByMessage, setFeedbackByMessage] = useState({});
 const [regeneratingMessageId, setRegeneratingMessageId] = useState(null);
+const [showAdminPanel, setShowAdminPanel] = useState(false);
   useEffect(() => {
     async function loadSession() {
       const {
@@ -593,6 +595,8 @@ if (!regeneratedReply.trim()) {
   if (!session) {
     return <AuthPage />;
   }
+  const isAdmin =
+  session.user.email?.toLowerCase() === "hafizsmhashir228@gmail.com";
 
   if (chatLoading) {
     return <div className="auth-loading">Loading your chat...</div>;
@@ -600,7 +604,9 @@ if (!regeneratedReply.trim()) {
 
   return (
     <main className="app">
-     
+     {showAdminPanel && (
+  <AdminPanel onClose={() => setShowAdminPanel(false)} />
+)}
       {showSidebar && (
         <ChatSidebar
           session={session}
@@ -639,6 +645,15 @@ if (!regeneratedReply.trim()) {
     >
       ☰ Chats
     </button>
+    {isAdmin && (
+  <button
+    type="button"
+    className="admin-button"
+    onClick={() => setShowAdminPanel(true)}
+  >
+    Admin
+  </button>
+)}
 
     <button
       type="button"
