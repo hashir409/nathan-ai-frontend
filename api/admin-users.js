@@ -69,8 +69,30 @@ async function requireAdmin(req, res) {
 
   return {
     adminClient,
+    adminUser: user,
     adminEmail: adminEmail.toLowerCase(),
   };
+}
+
+async function saveAuditLog({
+  adminClient,
+  adminUser,
+  targetUser,
+  action,
+  details = {},
+}) {
+  const { error } = await adminClient.from("admin_audit_logs").insert({
+    action,
+    admin_user_id: adminUser.id,
+    admin_email: adminUser.email || "No email",
+    target_user_id: targetUser.id,
+    target_user_email: targetUser.email || "No email",
+    details,
+  });
+
+  if (error) {
+    throw new Error("Action completed, but audit log could not be saved.");
+  }
 }
 
 export default async function handler(req, res) {
@@ -85,9 +107,7 @@ export default async function handler(req, res) {
           ? req.query.search.trim().toLowerCase()
           : "";
 
-      const page =
-        Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
-
+      const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
       const perPage = 50;
 
       const { data, error } = await admin.adminClient.auth.admin.listUsers({
@@ -137,6 +157,10 @@ export default async function handler(req, res) {
         });
       }
 
+      const wasBanned =
+        targetUser.user.banned_until &&
+        new Date(targetUser.user.banned_until) > new Date();
+
       const banDuration = action === "ban" ? "876000h" : "none";
 
       const { data, error } =
@@ -145,6 +169,18 @@ export default async function handler(req, res) {
         });
 
       if (error) throw error;
+
+      await saveAuditLog({
+        adminClient: admin.adminClient,
+        adminUser: admin.adminUser,
+        targetUser: targetUser.user,
+        action: action === "ban" ? "ban_user" : "unban_user",
+        details: {
+          previous_banned_until: targetUser.user.banned_until || null,
+          was_banned: Boolean(wasBanned),
+          new_ban_duration: banDuration,
+        },
+      });
 
       return res.status(200).json({
         message: action === "ban" ? "User banned." : "User unbanned.",
@@ -176,12 +212,27 @@ export default async function handler(req, res) {
         });
       }
 
-      const { error } = await admin.adminClient.auth.admin.deleteUser(userId, true);
+      await saveAuditLog({
+        adminClient: admin.adminClient,
+        adminUser: admin.adminUser,
+        targetUser: targetUser.user,
+        action: "soft_delete_user",
+        details: {
+          previous_banned_until: targetUser.user.banned_until || null,
+          user_created_at: targetUser.user.created_at || null,
+          last_sign_in_at: targetUser.user.last_sign_in_at || null,
+        },
+      });
+
+      const { error } = await admin.adminClient.auth.admin.deleteUser(
+        userId,
+        true,
+      );
 
       if (error) throw error;
 
       return res.status(200).json({
-        message: "User was soft-deleted.",
+        message: "User was soft-deleted and audit logged.",
       });
     }
 
