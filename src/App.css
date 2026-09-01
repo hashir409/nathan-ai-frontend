@@ -731,3 +731,200 @@
     grid-template-columns: 1fr;
   }
 }
+.admin-generated-time {
+  margin-right: auto;
+  color: #aeb8ce;
+  font-size: 0.8rem;
+}
+
+.analytics-section {
+  margin-bottom: 22px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 13px;
+  background: #171b2e;
+}
+
+.analytics-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.analytics-section-heading h3 {
+  margin: 3px 0 0;
+  color: #f8fafc;
+  font-size: 1.06rem;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.analytics-card {
+  display: flex;
+  min-height: 115px;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 15px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.analytics-card span {
+  color: #aeb8ce;
+  font-size: 0.82rem;
+}
+
+.analytics-card strong {
+  color: #f8fafc;
+  font-size: 1.75rem;
+}
+
+.analytics-card small {
+  color: #8f9bb4;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #aeb8ce;
+  font-size: 0.78rem;
+}
+
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+
+.legend-users {
+  background: #a78bfa;
+}
+
+.legend-messages {
+  background: #38bdf8;
+}
+
+.activity-chart {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(50px, 1fr));
+  align-items: end;
+  min-height: 230px;
+  gap: 10px;
+  padding: 14px 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.activity-day {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  text-align: center;
+}
+
+.activity-bars {
+  display: flex;
+  height: 165px;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 5px;
+}
+
+.activity-bar {
+  width: min(22px, 33%);
+  min-height: 8px;
+  border-radius: 6px 6px 2px 2px;
+  transition: height 0.25s ease;
+}
+
+.activity-users {
+  background: linear-gradient(180deg, #c4b5fd, #8b5cf6);
+}
+
+.activity-messages {
+  background: linear-gradient(180deg, #7dd3fc, #0284c7);
+}
+
+.activity-value {
+  overflow: hidden;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-label {
+  color: #8f9bb4;
+  font-size: 0.72rem;
+}
+
+.activity-help {
+  margin: 14px 0 0;
+  color: #aeb8ce;
+  font-size: 0.78rem;
+}
+
+.activity-help strong {
+  color: #e2e8f0;
+}
+
+@media (max-width: 860px) {
+  .analytics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-actions {
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .admin-generated-time {
+    width: 100%;
+  }
+
+  .analytics-section {
+    padding: 15px;
+  }
+
+  .analytics-section-heading {
+    flex-direction: column;
+  }
+
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-chart {
+    grid-template-columns: repeat(7, minmax(34px, 1fr));
+    gap: 4px;
+    padding-inline: 0;
+  }
+
+  .activity-bars {
+    gap: 3px;
+  }
+
+  .activity-bar {
+    width: min(17px, 42%);
+  }
+
+  .activity-label {
+    font-size: 0.64rem;
+  }
+}
