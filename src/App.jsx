@@ -95,6 +95,7 @@ const [regeneratingMessageId, setRegeneratingMessageId] = useState(null);
 const [selectedAttachment, setSelectedAttachment] = useState(null);
 const [attachmentError, setAttachmentError] = useState("");
 const [uploadingAttachment, setUploadingAttachment] = useState(false);
+const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
 const [showAdminPanel, setShowAdminPanel] = useState(false);
   useEffect(() => {
     async function loadSession() {
@@ -179,6 +180,7 @@ function handleAttachmentChange(event) {
   const file = event.target.files?.[0];
 
   event.target.value = "";
+  setShowAttachmentMenu(false);
 
   if (!file) return;
 
@@ -215,6 +217,7 @@ function removeAttachment() {
 
   setSelectedAttachment(null);
   setAttachmentError("");
+  setShowAttachmentMenu(false);
 }
 
 async function uploadAttachment(userId, attachment) {
@@ -976,15 +979,69 @@ if (!regeneratedReply.trim()) {
 
         <form className="message-form" onSubmit={handleSend}>
           <div className="attachment-controls">
-  <label className="attachment-button" title="Attach a file">
-    <input
-      type="file"
-      accept=".png,.jpg,.jpeg,.webp,.pdf,.txt,.md,.js,.jsx,.ts,.tsx,.html,.css,.json,.py"
-      onChange={handleAttachmentChange}
+  <div className="attachment-menu-wrap">
+    <button
+      type="button"
+      className="attachment-plus-button"
+      onClick={() => setShowAttachmentMenu((isOpen) => !isOpen)}
       disabled={isSending || uploadingAttachment}
-    />
-    📎 Attach
-  </label>
+      aria-label="Add attachment"
+      aria-expanded={showAttachmentMenu}
+      title="Add attachment"
+    >
+      +
+    </button>
+
+    {showAttachmentMenu && (
+      <div className="attachment-menu" role="menu">
+        <label className="attachment-menu-item" role="menuitem">
+          <span className="attachment-menu-icon">📁</span>
+          <span>
+            <strong>Upload file</strong>
+            <small>PDF, text, code, or image</small>
+          </span>
+
+          <input
+            type="file"
+            accept=".png,.jpg,.jpeg,.webp,.pdf,.txt,.md,.js,.jsx,.ts,.tsx,.html,.css,.json,.py"
+            onChange={handleAttachmentChange}
+            disabled={isSending || uploadingAttachment}
+          />
+        </label>
+
+        <label className="attachment-menu-item" role="menuitem">
+          <span className="attachment-menu-icon">🖼️</span>
+          <span>
+            <strong>Upload image</strong>
+            <small>PNG, JPG, or WEBP</small>
+          </span>
+
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={handleAttachmentChange}
+            disabled={isSending || uploadingAttachment}
+          />
+        </label>
+
+        <label className="attachment-menu-item" role="menuitem">
+          <span className="attachment-menu-icon">📷</span>
+          <span>
+            <strong>Take photo</strong>
+            <small>Use your camera</small>
+          </span>
+
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleAttachmentChange}
+            disabled={isSending || uploadingAttachment}
+          />
+        </label>
+      </div>
+    )}
+  </div>
 
   {selectedAttachment && (
     <div className="selected-attachment">
@@ -1004,8 +1061,8 @@ if (!regeneratedReply.trim()) {
     </div>
   )}
 </div>
-
 {attachmentError && (
+  
   <p className="attachment-error">{attachmentError}</p>
 )}
         <textarea
