@@ -1025,20 +1025,19 @@ if (!regeneratedReply.trim()) {
         </label>
 
         <label className="attachment-menu-item" role="menuitem">
-          <span className="attachment-menu-icon">📷</span>
-          <span>
-            <strong>Take photo</strong>
-            <small>Use your camera</small>
-          </span>
+  <span className="attachment-menu-icon">🖼️</span>
+  <span>
+    <strong>Upload image</strong>
+    <small>Choose from gallery</small>
+  </span>
 
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleAttachmentChange}
-            disabled={isSending || uploadingAttachment}
-          />
-        </label>
+  <input
+    type="file"
+    accept="image/*"
+    onChange={handleAttachmentChange}
+    disabled={isSending || uploadingAttachment}
+  />
+</label>
       </div>
     )}
   </div>
