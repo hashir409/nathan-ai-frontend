@@ -1294,4 +1294,260 @@
   margin: -4px 0 10px;
   color: #fca5a5;
   font-size: 0.78rem;
+}html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.app {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.chat-card {
+  width: min(100%, 1100px);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.chat-header,
+.header-info,
+.header-actions,
+.message-form,
+.message-content,
+.messages {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.user-email {
+  min-width: 0;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-content {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.message-content pre,
+.message-content code,
+.code-block-wrapper,
+.code-block-wrapper pre {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.code-block-wrapper {
+  overflow-x: auto;
+}
+
+.code-block-wrapper pre {
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.message-form textarea {
+  min-width: 0;
+  max-width: 100%;
+  resize: vertical;
+}
+
+@media (max-width: 700px) {
+  .app {
+    min-height: 100dvh;
+    padding: 0;
+  }
+
+  .chat-card {
+    width: 100%;
+    min-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .chat-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 15px 13px;
+  }
+
+  .header-info {
+    flex: 1 1 155px;
+    min-width: 0;
+  }
+
+  .header-info h1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header-actions {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .user-email {
+    order: 10;
+    width: 100%;
+    max-width: 100%;
+    padding-top: 2px;
+    font-size: 0.72rem;
+  }
+
+  .open-sidebar-button,
+  .admin-button,
+  .logout-button {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 9px 8px;
+    font-size: 0.75rem;
+  }
+
+  .messages {
+    width: 100%;
+    padding: 15px 10px 125px;
+  }
+
+  .message {
+    width: min(94%, 100%);
+    max-width: 94%;
+  }
+
+  .message-content {
+    font-size: 0.9rem;
+  }
+
+  .message-content pre {
+    max-width: 100%;
+    font-size: 0.72rem;
+  }
+
+  .response-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .response-action-button,
+  .response-action-icon {
+    min-height: 32px;
+    padding: 6px 8px;
+    font-size: 0.7rem;
+  }
+
+  .message-form {
+    position: fixed;
+    z-index: 20;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    width: 100%;
+    margin: 0;
+    padding: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(5, 8, 28, 0.96);
+    backdrop-filter: blur(12px);
+  }
+
+  .message-form .attachment-controls,
+  .message-form .attachment-error {
+    grid-column: 1 / -1;
+  }
+
+  .message-form textarea {
+    width: 100%;
+    min-height: 46px;
+    max-height: 120px;
+    padding: 12px 10px;
+    font-size: 0.9rem;
+  }
+
+  .message-form > button[type="submit"] {
+    align-self: stretch;
+    min-width: 70px;
+    padding: 9px 10px;
+    font-size: 0.78rem;
+  }
+
+  .attachment-controls {
+    width: 100%;
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+
+  .attachment-button {
+    flex: 0 0 auto;
+    padding: 8px 10px;
+  }
+
+  .selected-attachment {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .admin-overlay {
+    align-items: flex-start;
+    padding: 8px;
+  }
+
+  .admin-panel {
+    width: 100%;
+    max-height: calc(100dvh - 16px);
+    padding: 15px;
+    border-radius: 14px;
+  }
+}
+
+@media (max-width: 390px) {
+  .chat-header {
+    padding-inline: 10px;
+  }
+
+  .header-info {
+    flex-basis: 140px;
+  }
+
+  .logo {
+    flex: 0 0 auto;
+  }
+
+  .open-sidebar-button,
+  .admin-button,
+  .logout-button {
+    font-size: 0.68rem;
+  }
+
+  .messages {
+    padding-inline: 7px;
+  }
+
+  .message {
+    max-width: 97%;
+  }
+
+  .response-action-button,
+  .response-action-icon {
+    padding: 5px 6px;
+    font-size: 0.65rem;
+  }
 }
