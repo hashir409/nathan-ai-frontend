@@ -992,54 +992,55 @@ if (!regeneratedReply.trim()) {
       +
     </button>
 
-    {showAttachmentMenu && (
-      <div className="attachment-menu" role="menu">
-        <label className="attachment-menu-item" role="menuitem">
-          <span className="attachment-menu-icon">📁</span>
-          <span>
-            <strong>Upload file</strong>
-            <small>PDF, text, code, or image</small>
-          </span>
+   {showAttachmentMenu && (
+  <div className="attachment-menu" role="menu">
+    <label className="attachment-menu-item" role="menuitem">
+      <span className="attachment-menu-icon">📁</span>
+      <span>
+        <strong>Upload file</strong>
+        <small>PDF, text, code, or image</small>
+      </span>
 
-          <input
-            type="file"
-            accept=".png,.jpg,.jpeg,.webp,.pdf,.txt,.md,.js,.jsx,.ts,.tsx,.html,.css,.json,.py"
-            onChange={handleAttachmentChange}
-            disabled={isSending || uploadingAttachment}
-          />
-        </label>
+      <input
+        type="file"
+        accept=".png,.jpg,.jpeg,.webp,.pdf,.txt,.md,.js,.jsx,.ts,.tsx,.html,.css,.json,.py"
+        onChange={handleAttachmentChange}
+        disabled={isSending || uploadingAttachment}
+      />
+    </label>
 
-        <label className="attachment-menu-item" role="menuitem">
-          <span className="attachment-menu-icon">🖼️</span>
-          <span>
-            <strong>Upload image</strong>
-            <small>PNG, JPG, or WEBP</small>
-          </span>
+    <label className="attachment-menu-item" role="menuitem">
+      <span className="attachment-menu-icon">🖼️</span>
+      <span>
+        <strong>Upload image</strong>
+        <small>Choose from gallery</small>
+      </span>
 
-          <input
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={handleAttachmentChange}
-            disabled={isSending || uploadingAttachment}
-          />
-        </label>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleAttachmentChange}
+        disabled={isSending || uploadingAttachment}
+      />
+    </label>
 
-        <label className="attachment-menu-item" role="menuitem">
-  <span className="attachment-menu-icon">🖼️</span>
-  <span>
-    <strong>Upload image</strong>
-    <small>Choose from gallery</small>
-  </span>
+    <label className="attachment-menu-item" role="menuitem">
+      <span className="attachment-menu-icon">📷</span>
+      <span>
+        <strong>Take photo</strong>
+        <small>Use your camera</small>
+      </span>
 
-  <input
-    type="file"
-    accept="image/*"
-    onChange={handleAttachmentChange}
-    disabled={isSending || uploadingAttachment}
-  />
-</label>
-      </div>
-    )}
+      <input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleAttachmentChange}
+        disabled={isSending || uploadingAttachment}
+      />
+    </label>
+  </div>
+)}
   </div>
 
   {selectedAttachment && (
