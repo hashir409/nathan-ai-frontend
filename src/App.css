@@ -24,7 +24,7 @@ body {
   background: #0b1020;
 }
 
-/* Main chat layout */
+/* App shell: desktop */
 .app {
   display: grid;
   width: 100%;
@@ -52,6 +52,7 @@ body {
   box-shadow: 0 20px 70px rgba(0, 0, 0, 0.45);
 }
 
+/* Header */
 .chat-header {
   display: flex;
   min-width: 0;
@@ -123,12 +124,14 @@ body {
 }
 
 .open-sidebar-button,
+.export-button,
 .admin-button,
-.logout-button,
-.export-button {
+.logout-button {
+  min-height: 36px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 9px;
   padding: 8px 12px;
+  color: #fff;
   font: inherit;
   font-size: 14px;
   font-weight: 700;
@@ -138,11 +141,28 @@ body {
 
 .open-sidebar-button {
   background: #1f2937;
-  color: #fff;
 }
 
 .open-sidebar-button:hover {
   background: #2d3a50;
+}
+
+.export-button {
+  border-color: rgba(56, 189, 248, 0.58);
+  background: rgba(14, 116, 144, 0.15);
+  color: #bae6fd;
+}
+
+.export-button:hover:not(:disabled),
+.export-button[aria-expanded="true"] {
+  border-color: #7dd3fc;
+  background: rgba(14, 116, 144, 0.42);
+  color: #fff;
+}
+
+.export-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
 }
 
 .admin-button {
@@ -213,10 +233,9 @@ body {
   max-width: 100%;
   margin: 6px 0 0;
   overflow-wrap: anywhere;
+  word-break: break-word;
   color: #eff4ff;
   line-height: 1.55;
-  overflow-wrap: anywhere;
-  word-break: break-word;
 }
 
 .message-content p {
@@ -229,15 +248,9 @@ body {
   margin-bottom: 0;
 }
 
-.message-content pre,
-.message-content code,
-.code-block-wrapper,
-.code-block-wrapper pre {
+.code-block-wrapper {
   min-width: 0;
   max-width: 100%;
-}
-
-.code-block-wrapper {
   margin: 10px 0;
   overflow-x: auto;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -278,6 +291,7 @@ body {
 }
 
 .message-content pre {
+  max-width: 100%;
   margin: 0;
   padding: 0;
   overflow-x: auto;
@@ -289,7 +303,7 @@ body {
   font-size: 13px;
 }
 
-/* Response buttons */
+/* Response actions */
 .response-actions {
   display: flex;
   flex-wrap: wrap;
@@ -353,7 +367,7 @@ body {
   font-weight: 700;
 }
 
-/* Attachment UI */
+/* Attachments */
 .message-attachment {
   display: inline-flex;
   max-width: 100%;
@@ -419,7 +433,7 @@ body {
 
 .attachment-menu {
   position: absolute;
-  z-index: 100;
+  z-index: 200;
   bottom: calc(100% + 9px);
   left: 0;
   width: min(270px, calc(100vw - 28px));
@@ -557,7 +571,7 @@ body {
   box-shadow: 0 0 0 3px rgba(123, 99, 255, 0.2);
 }
 
-.message-form button {
+.message-form > button[type="submit"] {
   min-height: 52px;
   border: 0;
   border-radius: 12px;
@@ -569,11 +583,11 @@ body {
   cursor: pointer;
 }
 
-.message-form button:hover:not(:disabled) {
+.message-form > button[type="submit"]:hover:not(:disabled) {
   filter: brightness(1.12);
 }
 
-.message-form button:disabled,
+.message-form > button[type="submit"]:disabled,
 .message-form textarea:disabled {
   cursor: not-allowed;
   opacity: 0.6;
@@ -716,7 +730,7 @@ body {
   font-size: 12px;
 }
 
-/* Search in sidebar */
+/* Sidebar search */
 .chat-search-wrap {
   position: relative;
   display: flex;
@@ -781,33 +795,15 @@ body {
   font-size: 0.78rem;
 }
 
-/* Export */
+/* Export menu */
 .export-menu-wrap {
   position: relative;
   flex: 0 0 auto;
 }
 
-.export-button {
-  border-color: rgba(56, 189, 248, 0.58);
-  background: rgba(14, 116, 144, 0.15);
-  color: #bae6fd;
-}
-
-.export-button:hover:not(:disabled),
-.export-button[aria-expanded="true"] {
-  border-color: #7dd3fc;
-  background: rgba(14, 116, 144, 0.42);
-  color: #fff;
-}
-
-.export-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.46;
-}
-
 .export-menu {
   position: absolute;
-  z-index: 150;
+  z-index: 1500;
   top: calc(100% + 8px);
   right: 0;
   width: 238px;
@@ -868,15 +864,10 @@ body {
   font-size: 0.7rem;
 }
 
-.export-menu-item:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-/* Admin dashboard */
+/* Admin */
 .admin-overlay {
   position: fixed;
-  z-index: 2000;
+  z-index: 3000;
   inset: 0;
   display: flex;
   align-items: center;
@@ -899,17 +890,30 @@ body {
   color: #f8fafc;
 }
 
-.admin-header {
+.admin-header,
+.analytics-section-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+}
+
+.admin-header {
   margin-bottom: 18px;
 }
 
-.admin-header h2 {
+.admin-header h2,
+.analytics-section-heading h3 {
   margin: 3px 0 0;
+}
+
+.admin-header h2 {
   font-size: 1.65rem;
+}
+
+.analytics-section-heading h3 {
+  color: #f8fafc;
+  font-size: 1.06rem;
 }
 
 .admin-eyebrow {
@@ -963,6 +967,19 @@ body {
   opacity: 0.62;
 }
 
+.admin-generated-time,
+.admin-list-row span,
+.admin-empty,
+.admin-loading {
+  color: #aeb8ce;
+  font-size: 0.83rem;
+}
+
+.admin-generated-time {
+  margin-right: auto;
+  font-size: 0.8rem;
+}
+
 .admin-stats-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(125px, 1fr));
@@ -970,7 +987,8 @@ body {
   margin-bottom: 22px;
 }
 
-.admin-stat-card {
+.admin-stat-card,
+.analytics-card {
   display: flex;
   min-height: 110px;
   flex-direction: column;
@@ -981,78 +999,21 @@ body {
   background: #1a1e33;
 }
 
-.admin-stat-card span {
+.admin-stat-card span,
+.analytics-card span {
   color: #aeb8ce;
   font-size: 0.85rem;
 }
 
-.admin-stat-card strong {
+.admin-stat-card strong,
+.analytics-card strong {
   color: #fff;
   font-size: 1.85rem;
 }
 
-.admin-data-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
+.analytics-section,
 .admin-data-section {
   min-width: 0;
-  padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 13px;
-  background: #171b2e;
-}
-
-.admin-data-section h3 {
-  margin: 0 0 14px;
-  font-size: 1rem;
-}
-
-.admin-list {
-  display: grid;
-  gap: 9px;
-}
-
-.admin-list-row {
-  display: grid;
-  gap: 4px;
-  padding: 12px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.055);
-}
-
-.admin-list-row strong {
-  overflow: hidden;
-  color: #f8fafc;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.admin-list-row span,
-.admin-empty,
-.admin-loading {
-  color: #aeb8ce;
-  font-size: 0.83rem;
-}
-
-.admin-error {
-  margin: 0 0 18px;
-  padding: 12px;
-  border: 1px solid rgba(248, 113, 113, 0.55);
-  border-radius: 9px;
-  background: rgba(127, 29, 29, 0.3);
-  color: #fecaca;
-}
-
-.admin-generated-time {
-  margin-right: auto;
-  color: #aeb8ce;
-  font-size: 0.8rem;
-}
-
-.analytics-section {
   margin-bottom: 22px;
   padding: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1061,17 +1022,7 @@ body {
 }
 
 .analytics-section-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
   margin-bottom: 16px;
-}
-
-.analytics-section-heading h3 {
-  margin: 3px 0 0;
-  color: #f8fafc;
-  font-size: 1.06rem;
 }
 
 .analytics-grid {
@@ -1081,23 +1032,10 @@ body {
 }
 
 .analytics-card {
-  display: flex;
   min-height: 115px;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 15px;
+  border: 0;
   border-radius: 11px;
   background: rgba(255, 255, 255, 0.055);
-}
-
-.analytics-card span {
-  color: #aeb8ce;
-  font-size: 0.82rem;
-}
-
-.analytics-card strong {
-  color: #f8fafc;
-  font-size: 1.75rem;
 }
 
 .analytics-card small {
@@ -1163,7 +1101,6 @@ body {
   width: min(22px, 33%);
   min-height: 8px;
   border-radius: 6px 6px 2px 2px;
-  transition: height 0.25s ease;
 }
 
 .activity-users {
@@ -1174,10 +1111,15 @@ body {
   background: linear-gradient(180deg, #7dd3fc, #0284c7);
 }
 
+.activity-value,
+.activity-label,
+.activity-help {
+  color: #aeb8ce;
+  font-size: 0.75rem;
+}
+
 .activity-value {
   overflow: hidden;
-  color: #cbd5e1;
-  font-size: 0.75rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1189,12 +1131,56 @@ body {
 
 .activity-help {
   margin: 14px 0 0;
-  color: #aeb8ce;
   font-size: 0.78rem;
 }
 
 .activity-help strong {
   color: #e2e8f0;
+}
+
+.admin-data-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.admin-data-section {
+  margin-bottom: 0;
+  padding: 18px;
+}
+
+.admin-data-section h3 {
+  margin: 0 0 14px;
+  font-size: 1rem;
+}
+
+.admin-list {
+  display: grid;
+  gap: 9px;
+}
+
+.admin-list-row {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.admin-list-row strong {
+  overflow: hidden;
+  color: #f8fafc;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-error {
+  margin: 0 0 18px;
+  padding: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.55);
+  border-radius: 9px;
+  background: rgba(127, 29, 29, 0.3);
+  color: #fecaca;
 }
 
 /* User management */
@@ -1357,7 +1343,7 @@ body {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* Responsive tablet */
+/* Tablet */
 @media (max-width: 860px) {
   .admin-stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1372,7 +1358,7 @@ body {
   }
 }
 
-/* Full-screen mobile */
+/* Mobile: a true full-screen app */
 @media (max-width: 700px) {
   html,
   body,
@@ -1397,6 +1383,7 @@ body {
   }
 
   .chat-card {
+    display: flex;
     width: 100%;
     min-width: 0;
     max-width: none;
@@ -1406,9 +1393,12 @@ body {
     border-radius: 0;
     background: #05081c;
     box-shadow: none;
+    overflow: visible;
   }
 
   .chat-header {
+    position: relative;
+    z-index: 500;
     flex: 0 0 auto;
     flex-wrap: wrap;
     align-items: flex-start;
@@ -1417,6 +1407,7 @@ body {
     padding-right: calc(12px + env(safe-area-inset-right));
     padding-bottom: 12px;
     padding-left: calc(12px + env(safe-area-inset-left));
+    overflow: visible;
   }
 
   .header-info {
@@ -1434,6 +1425,7 @@ body {
     flex-wrap: wrap;
     gap: 7px;
     margin-left: 0;
+    overflow: visible;
   }
 
   .user-email {
@@ -1448,14 +1440,14 @@ body {
   .export-menu-wrap,
   .admin-button,
   .logout-button {
-    flex: 1 1 0;
     min-width: 0;
+    flex: 1 1 0;
   }
 
   .open-sidebar-button,
+  .export-button,
   .admin-button,
-  .logout-button,
-  .export-button {
+  .logout-button {
     width: 100%;
     min-height: 39px;
     padding: 8px 6px;
@@ -1492,7 +1484,7 @@ body {
 
   .message-form {
     position: fixed;
-    z-index: 30;
+    z-index: 400;
     right: 0;
     bottom: 0;
     left: 0;
@@ -1521,8 +1513,8 @@ body {
   }
 
   .selected-attachment {
-    flex: 1 1 auto;
     max-width: none;
+    flex: 1 1 auto;
   }
 
   .message-form textarea {
@@ -1540,14 +1532,21 @@ body {
   }
 
   .attachment-menu {
-    z-index: 200;
+    z-index: 600;
+  }
+
+  .export-menu-wrap {
+    position: relative;
+    z-index: 700;
   }
 
   .export-menu {
-    top: auto;
-    right: auto;
-    bottom: calc(100% + 8px);
-    left: 0;
+    position: absolute;
+    z-index: 800;
+    top: calc(100% + 8px);
+    right: 0;
+    bottom: auto;
+    left: auto;
     width: min(238px, calc(100vw - 24px));
   }
 
@@ -1573,13 +1572,16 @@ body {
     border-radius: 14px;
   }
 
-  .admin-actions {
+  .admin-actions,
+  .user-search-form {
     align-items: center;
     flex-wrap: wrap;
   }
 
-  .admin-generated-time {
+  .admin-generated-time,
+  .user-search-form input {
     width: 100%;
+    flex-basis: 100%;
   }
 
   .analytics-section {
@@ -1613,14 +1615,6 @@ body {
     font-size: 0.64rem;
   }
 
-  .user-search-form {
-    flex-wrap: wrap;
-  }
-
-  .user-search-form input {
-    flex-basis: 100%;
-  }
-
   .user-pagination {
     justify-content: space-between;
   }
@@ -1646,9 +1640,9 @@ body {
   }
 
   .open-sidebar-button,
+  .export-button,
   .admin-button,
-  .logout-button,
-  .export-button {
+  .logout-button {
     font-size: 0.67rem;
   }
 
@@ -1656,227 +1650,5 @@ body {
   .response-action-icon {
     padding: 5px 6px;
     font-size: 0.65rem;
-  }
-}/* Desktop-only: restore centered full chat card */
-@media (min-width: 701px) {
-  html,
-  body,
-  #root {
-    min-height: 100%;
-    overflow: visible;
-    background: #0b1020;
-  }
-
-  body {
-    overflow-x: hidden;
-  }
-
-  .app {
-    display: grid;
-    width: 100%;
-    min-height: 100vh;
-    height: auto;
-    place-items: center;
-    padding: 24px;
-    overflow-x: hidden;
-    overflow-y: visible;
-    background:
-      radial-gradient(circle at top left, #25365d 0, transparent 35%),
-      radial-gradient(circle at bottom right, #273b6d 0, transparent 32%),
-      #0b1020;
-  }
-
-  .chat-card {
-    display: flex;
-    width: min(100%, 850px);
-    min-width: 0;
-    height: min(82vh, 720px);
-    min-height: 0;
-    margin: 0;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 22px;
-    background: rgba(16, 24, 46, 0.9);
-    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.45);
-  }
-
-  .chat-header {
-    padding: 20px 24px;
-  }
-
-  .messages {
-    padding: 24px;
-  }
-
-  .message-form {
-    position: static;
-    width: auto;
-    padding: 18px 20px;
-    background: rgba(8, 13, 28, 0.45);
-    box-shadow: none;
-  }
-
-  .header-actions {
-    width: auto;
-    flex-wrap: nowrap;
-    margin-left: auto;
-  }
-
-  .user-email {
-    order: initial;
-    width: auto;
-    max-width: 210px;
-    padding: 0;
-    font-size: 13px;
-  }
-
-  .open-sidebar-button,
-  .export-menu-wrap,
-  .admin-button,
-  .logout-button {
-    flex: 0 0 auto;
-  }
-
-  .open-sidebar-button,
-  .admin-button,
-  .logout-button,
-  .export-button {
-    width: auto;
-    min-height: 0;
-    padding: 8px 12px;
-    font-size: 14px;
-  }
-}/* Mobile: keep export popup visible below the header */
-@media (max-width: 700px) {
-  .chat-card {
-    overflow: visible;
-  }
-
-  .chat-header {
-    position: relative;
-    z-index: 500;
-    overflow: visible;
-  }
-
-  .header-actions {
-    overflow: visible;
-  }
-
-  .export-menu-wrap {
-    position: relative;
-    z-index: 600;
-  }
-
-  .export-menu {
-    position: absolute;
-    z-index: 700;
-    top: calc(100% + 8px);
-    right: 0;
-    bottom: auto;
-    left: auto;
-    width: min(238px, calc(100vw - 24px));
-  }
-}
-/* Final desktop override: apply from 701px and wider */
-@media screen and (min-width: 701px) {
-  body {
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-  }
-
-  .app {
-    display: grid !important;
-    width: 100% !important;
-    min-height: 100vh !important;
-    height: auto !important;
-    place-items: center !important;
-    padding: 24px !important;
-    overflow: visible !important;
-    background:
-      radial-gradient(circle at top left, #25365d 0, transparent 35%),
-      radial-gradient(circle at bottom right, #273b6d 0, transparent 32%),
-      #0b1020 !important;
-  }
-
-  .chat-card {
-    display: flex !important;
-    width: min(100%, 850px) !important;
-    min-width: 0 !important;
-    height: min(82vh, 720px) !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    overflow: hidden !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-radius: 22px !important;
-    background: rgba(16, 24, 46, 0.9) !important;
-    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.45) !important;
-  }
-
-  .chat-header {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    padding: 20px 24px !important;
-  }
-
-  .header-actions {
-    display: flex !important;
-    width: auto !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    gap: 10px !important;
-    margin-left: auto !important;
-  }
-
-  .user-email {
-    order: 0 !important;
-    width: auto !important;
-    max-width: 210px !important;
-    padding: 0 !important;
-    font-size: 13px !important;
-  }
-
-  .open-sidebar-button,
-  .export-menu-wrap,
-  .admin-button,
-  .logout-button {
-    flex: 0 0 auto !important;
-  }
-
-  .open-sidebar-button,
-  .export-button,
-  .admin-button,
-  .logout-button {
-    width: auto !important;
-    min-height: 0 !important;
-    padding: 8px 12px !important;
-    font-size: 14px !important;
-  }
-
-  .messages {
-    padding: 24px !important;
-  }
-
-  .message-form {
-    position: static !important;
-    display: flex !important;
-    width: auto !important;
-    margin: 0 !important;
-    padding: 18px 20px !important;
-    background: rgba(8, 13, 28, 0.45) !important;
-    box-shadow: none !important;
-  }
-}
-/* Mobile export menu: stay fully inside the right side of screen */
-@media screen and (max-width: 700px) {
-  .export-menu-wrap {
-    position: relative !important;
-  }
-
-  .export-menu {
-    top: calc(100% + 8px) !important;
-    right: 0 !important;
-    bottom: auto !important;
-    left: auto !important;
-    width: min(238px, calc(100vw - 24px)) !important;
   }
 }
