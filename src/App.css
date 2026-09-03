@@ -1634,3 +1634,122 @@ body,
     left: 0;
   }
 }
+.export-menu-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.export-button {
+  border: 1px solid rgba(56, 189, 248, 0.58);
+  border-radius: 9px;
+  padding: 9px 12px;
+  background: rgba(14, 116, 144, 0.15);
+  color: #bae6fd;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.export-button:hover:not(:disabled),
+.export-button[aria-expanded="true"] {
+  border-color: #7dd3fc;
+  background: rgba(14, 116, 144, 0.42);
+  color: #fff;
+}
+
+.export-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.export-menu {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 238px;
+  overflow: hidden;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 12px;
+  background: #181c31;
+  box-shadow: 0 15px 42px rgba(0, 0, 0, 0.48);
+}
+
+.export-menu-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  padding: 12px 13px;
+  background: transparent;
+  color: #e2e8f0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.16s ease;
+}
+
+.export-menu-item:hover:not(:disabled) {
+  background: rgba(14, 116, 144, 0.21);
+}
+
+.export-menu-item + .export-menu-item {
+  border-top: 1px solid rgba(255, 255, 255, 0.075);
+}
+
+.export-menu-item > span:first-child {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(56, 189, 248, 0.13);
+  color: #7dd3fc;
+  font-size: 1.1rem;
+}
+
+.export-menu-item strong,
+.export-menu-item small {
+  display: block;
+}
+
+.export-menu-item strong {
+  color: #f8fafc;
+  font-size: 0.83rem;
+}
+
+.export-menu-item small {
+  margin-top: 2px;
+  color: #9aa7c1;
+  font-size: 0.7rem;
+}
+
+.export-menu-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (max-width: 700px) {
+  .export-menu-wrap {
+    flex: 1 1 auto;
+  }
+
+  .export-button {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 7px;
+    font-size: 0.75rem;
+  }
+
+  .export-menu {
+    top: auto;
+    right: auto;
+    bottom: calc(100% + 8px);
+    left: 0;
+    width: min(238px, calc(100vw - 24px));
+  }
+}

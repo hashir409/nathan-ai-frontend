@@ -1,3 +1,4 @@
+import { jsPDF } from "jspdf";
 import AdminPanel from "./components/AdminPanel";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -97,6 +98,8 @@ const [attachmentError, setAttachmentError] = useState("");
 const [uploadingAttachment, setUploadingAttachment] = useState(false);
 const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
 const [showAdminPanel, setShowAdminPanel] = useState(false);
+const [showExportMenu, setShowExportMenu] = useState(false);
+const [exporting, setExporting] = useState(false);
   useEffect(() => {
     async function loadSession() {
       const {
@@ -686,11 +689,221 @@ if (!regeneratedReply.trim()) {
     setIsSending(false);
   }
 }
-  async function handleNewChat() {
-    setConversationId(null);
-    setMessages(starterMessages);
-    setShowSidebar(false);
+function getConversationExportTitle() {
+  const firstUserMessage = messages.find(
+    (message) => message.role === "user",
+  );
+
+  const rawTitle = firstUserMessage?.content || "Nathan AI conversation";
+
+  return safeFileName(rawTitle)
+    .replace(/\.[a-z0-9]+$/i, "")
+    .slice(0, 70) || "nathan-ai-conversation";
+}
+
+function formatExportDate(dateValue) {
+  if (!dateValue) return "";
+
+  return new Date(dateValue).toLocaleString();
+}
+
+function buildMarkdownExport() {
+  const title = getConversationExportTitle();
+  const exportedAt = new Date().toLocaleString();
+
+  const messageBlocks = messages
+    .filter((message) => !message.loading)
+    .map((message) => {
+      const speaker = message.role === "assistant" ? "Nathan AI" : "You";
+      const attachment = message.attachment_name
+        ? `\n\n**Attachment:** ${message.attachment_name}`
+        : "";
+      const timestamp = message.created_at
+        ? `\n\n*${formatExportDate(message.created_at)}*`
+        : "";
+
+      return `## ${speaker}${timestamp}${attachment}\n\n${message.content}`;
+    })
+    .join("\n\n---\n\n");
+
+  return `# ${title}
+
+Exported from Nathan AI on ${exportedAt}
+
+${messageBlocks}
+`;
+}
+
+function downloadFile(content, fileName, mimeType) {
+  const blob = new Blob([content], {
+    type: mimeType,
+  });
+
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = objectUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  window.setTimeout(() => {
+    URL.revokeObjectURL(objectUrl);
+  }, 0);
+}
+
+function handleExportMarkdown() {
+  if (!conversationId || exporting) return;
+
+  setExporting(true);
+
+  try {
+    const fileName = `${getConversationExportTitle()}.md`;
+
+    downloadFile(
+      buildMarkdownExport(),
+      fileName,
+      "text/markdown;charset=utf-8",
+    );
+
+    setShowExportMenu(false);
+  } catch (error) {
+    console.error("Could not export Markdown:", error);
+    alert("Could not export this chat as Markdown.");
+  } finally {
+    setExporting(false);
   }
+}
+
+function addPdfText(doc, text, x, startY, maxWidth, pageHeight) {
+  const lineHeight = 5.5;
+  const bottomMargin = 15;
+  const lines = doc.splitTextToSize(String(text || ""), maxWidth);
+  let y = startY;
+
+  for (const line of lines) {
+    if (y > pageHeight - bottomMargin) {
+      doc.addPage();
+      y = 16;
+    }
+
+    doc.text(line, x, y);
+    y += lineHeight;
+  }
+
+  return y;
+}
+
+function handleExportPdf() {
+  if (!conversationId || exporting) return;
+
+  setExporting(true);
+
+  try {
+    const title = getConversationExportTitle();
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    const contentWidth = pageWidth - margin * 2;
+    let y = 18;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    y = addPdfText(doc, title, margin, y, contentWidth, pageHeight);
+
+    y += 4;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    y = addPdfText(
+      doc,
+      `Exported from Nathan AI on ${new Date().toLocaleString()}`,
+      margin,
+      y,
+      contentWidth,
+      pageHeight,
+    );
+
+    y += 7;
+
+    const exportableMessages = messages.filter((message) => !message.loading);
+
+    exportableMessages.forEach((message, index) => {
+      if (y > pageHeight - 38) {
+        doc.addPage();
+        y = 16;
+      }
+
+      const speaker = message.role === "assistant" ? "Nathan AI" : "You";
+
+      doc.setDrawColor(210, 205, 245);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 6;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      y = addPdfText(doc, speaker, margin, y, contentWidth, pageHeight);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+
+      if (message.created_at) {
+        y = addPdfText(
+          doc,
+          formatExportDate(message.created_at),
+          margin,
+          y + 1,
+          contentWidth,
+          pageHeight,
+        );
+      }
+
+      if (message.attachment_name) {
+        doc.setFont("helvetica", "italic");
+        y = addPdfText(
+          doc,
+          `Attachment: ${message.attachment_name}`,
+          margin,
+          y + 3,
+          contentWidth,
+          pageHeight,
+        );
+        doc.setFont("helvetica", "normal");
+      }
+
+      y = addPdfText(
+        doc,
+        message.content,
+        margin,
+        y + 4,
+        contentWidth,
+        pageHeight,
+      );
+
+      y += index === exportableMessages.length - 1 ? 0 : 7;
+    });
+
+    doc.save(`${title}.pdf`);
+    setShowExportMenu(false);
+  } catch (error) {
+    console.error("Could not export PDF:", error);
+    alert("Could not export this chat as PDF.");
+  } finally {
+    setExporting(false);
+  }
+}
+ async function handleNewChat() {
+  setConversationId(null);
+  setMessages(starterMessages);
+  setShowSidebar(false);
+  setShowExportMenu(false);
+}
 
   async function handleSelectChat(id) {
     if (!session?.user?.id) return;
@@ -832,6 +1045,55 @@ if (!regeneratedReply.trim()) {
     >
       ☰ Chats
     </button>
+    <div className="export-menu-wrap">
+  <button
+    type="button"
+    className="export-button"
+    onClick={() => setShowExportMenu((isOpen) => !isOpen)}
+    disabled={!conversationId || exporting}
+    aria-expanded={showExportMenu}
+    aria-label="Export current chat"
+    title={
+      conversationId
+        ? "Export current chat"
+        : "Send a message before exporting"
+    }
+  >
+    {exporting ? "Exporting..." : "Export ▾"}
+  </button>
+
+  {showExportMenu && (
+    <div className="export-menu" role="menu">
+      <button
+        type="button"
+        className="export-menu-item"
+        onClick={handleExportMarkdown}
+        disabled={exporting}
+        role="menuitem"
+      >
+        <span>↓</span>
+        <span>
+          <strong>Download Markdown</strong>
+          <small>Editable notes and code</small>
+        </span>
+      </button>
+
+      <button
+        type="button"
+        className="export-menu-item"
+        onClick={handleExportPdf}
+        disabled={exporting}
+        role="menuitem"
+      >
+        <span>↓</span>
+        <span>
+          <strong>Download PDF</strong>
+          <small>Printable document</small>
+        </span>
+      </button>
+    </div>
+  )}
+</div>
     {isAdmin && (
   <button
     type="button"
