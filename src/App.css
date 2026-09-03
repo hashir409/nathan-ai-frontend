@@ -1776,3 +1776,107 @@ body {
     width: min(238px, calc(100vw - 24px));
   }
 }
+/* Final desktop override: apply from 701px and wider */
+@media screen and (min-width: 701px) {
+  body {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  .app {
+    display: grid !important;
+    width: 100% !important;
+    min-height: 100vh !important;
+    height: auto !important;
+    place-items: center !important;
+    padding: 24px !important;
+    overflow: visible !important;
+    background:
+      radial-gradient(circle at top left, #25365d 0, transparent 35%),
+      radial-gradient(circle at bottom right, #273b6d 0, transparent 32%),
+      #0b1020 !important;
+  }
+
+  .chat-card {
+    display: flex !important;
+    width: min(100%, 850px) !important;
+    min-width: 0 !important;
+    height: min(82vh, 720px) !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 22px !important;
+    background: rgba(16, 24, 46, 0.9) !important;
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.45) !important;
+  }
+
+  .chat-header {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    padding: 20px 24px !important;
+  }
+
+  .header-actions {
+    display: flex !important;
+    width: auto !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-left: auto !important;
+  }
+
+  .user-email {
+    order: 0 !important;
+    width: auto !important;
+    max-width: 210px !important;
+    padding: 0 !important;
+    font-size: 13px !important;
+  }
+
+  .open-sidebar-button,
+  .export-menu-wrap,
+  .admin-button,
+  .logout-button {
+    flex: 0 0 auto !important;
+  }
+
+  .open-sidebar-button,
+  .export-button,
+  .admin-button,
+  .logout-button {
+    width: auto !important;
+    min-height: 0 !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+  }
+
+  .messages {
+    padding: 24px !important;
+  }
+
+  .message-form {
+    position: static !important;
+    display: flex !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 18px 20px !important;
+    background: rgba(8, 13, 28, 0.45) !important;
+    box-shadow: none !important;
+  }
+}
+/* Mobile export menu: stay fully inside the right side of screen */
+@media screen and (max-width: 700px) {
+  .export-menu-wrap {
+    position: relative !important;
+  }
+
+  .export-menu {
+    top: calc(100% + 8px) !important;
+    right: 0 !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: min(238px, calc(100vw - 24px)) !important;
+  }
+}
