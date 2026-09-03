@@ -1657,4 +1657,122 @@ body {
     padding: 5px 6px;
     font-size: 0.65rem;
   }
+}/* Desktop-only: restore centered full chat card */
+@media (min-width: 701px) {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    overflow: visible;
+    background: #0b1020;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .app {
+    display: grid;
+    width: 100%;
+    min-height: 100vh;
+    height: auto;
+    place-items: center;
+    padding: 24px;
+    overflow-x: hidden;
+    overflow-y: visible;
+    background:
+      radial-gradient(circle at top left, #25365d 0, transparent 35%),
+      radial-gradient(circle at bottom right, #273b6d 0, transparent 32%),
+      #0b1020;
+  }
+
+  .chat-card {
+    display: flex;
+    width: min(100%, 850px);
+    min-width: 0;
+    height: min(82vh, 720px);
+    min-height: 0;
+    margin: 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 22px;
+    background: rgba(16, 24, 46, 0.9);
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.45);
+  }
+
+  .chat-header {
+    padding: 20px 24px;
+  }
+
+  .messages {
+    padding: 24px;
+  }
+
+  .message-form {
+    position: static;
+    width: auto;
+    padding: 18px 20px;
+    background: rgba(8, 13, 28, 0.45);
+    box-shadow: none;
+  }
+
+  .header-actions {
+    width: auto;
+    flex-wrap: nowrap;
+    margin-left: auto;
+  }
+
+  .user-email {
+    order: initial;
+    width: auto;
+    max-width: 210px;
+    padding: 0;
+    font-size: 13px;
+  }
+
+  .open-sidebar-button,
+  .export-menu-wrap,
+  .admin-button,
+  .logout-button {
+    flex: 0 0 auto;
+  }
+
+  .open-sidebar-button,
+  .admin-button,
+  .logout-button,
+  .export-button {
+    width: auto;
+    min-height: 0;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+}/* Mobile: keep export popup visible below the header */
+@media (max-width: 700px) {
+  .chat-card {
+    overflow: visible;
+  }
+
+  .chat-header {
+    position: relative;
+    z-index: 500;
+    overflow: visible;
+  }
+
+  .header-actions {
+    overflow: visible;
+  }
+
+  .export-menu-wrap {
+    position: relative;
+    z-index: 600;
+  }
+
+  .export-menu {
+    position: absolute;
+    z-index: 700;
+    top: calc(100% + 8px);
+    right: 0;
+    bottom: auto;
+    left: auto;
+    width: min(238px, calc(100vw - 24px));
+  }
 }
