@@ -580,15 +580,25 @@ async function handleRegenerateResponse(assistantMessageId) {
   );
 
   try {
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: previousUserMessage.content,
-      }),
-    });
+    const {
+  data: { session: latestSession },
+  error: sessionError,
+} = await supabase.auth.getSession();
+
+if (sessionError || !latestSession?.access_token) {
+  throw new Error("Please log in again before regenerating a response.");
+}
+
+const response = await fetch("/api/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${latestSession.access_token}`,
+  },
+  body: JSON.stringify({
+    message: previousUserMessage.content,
+  }),
+});
 
     if (!response.ok) {
       throw new Error("Nathan AI could not regenerate the response.");

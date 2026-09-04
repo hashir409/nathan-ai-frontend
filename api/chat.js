@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const FREE_DAILY_MESSAGE_LIMIT = 20;
 
 const ALLOWED_FILE_TYPES = {
   "image/png": ["png"],
@@ -61,6 +62,10 @@ function getAccessToken(req) {
   }
 
   return authorization.slice(7);
+}
+
+function getUtcDate() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 function getExtension(fileName = "") {
@@ -133,6 +138,64 @@ function safeAttachmentName(name) {
     .slice(0, 160);
 }
 
+async function checkAndIncrementUsage({ adminClient, userId, isAdmin }) {
+  if (isAdmin) {
+    return {
+      isAdmin: true,
+      limit: null,
+      used: null,
+      remaining: null,
+    };
+  }
+
+  const usageDate = getUtcDate();
+
+  const { data: existingUsage, error: selectError } = await adminClient
+    .from("daily_usage")
+    .select("message_count")
+    .eq("user_id", userId)
+    .eq("usage_date", usageDate)
+    .maybeSingle();
+
+  if (selectError) throw selectError;
+
+  const usedBeforeRequest = existingUsage?.message_count || 0;
+
+  if (usedBeforeRequest >= FREE_DAILY_MESSAGE_LIMIT) {
+    return {
+      isAdmin: false,
+      limit: FREE_DAILY_MESSAGE_LIMIT,
+      used: usedBeforeRequest,
+      remaining: 0,
+      limitReached: true,
+    };
+  }
+
+  const usedAfterRequest = usedBeforeRequest + 1;
+
+  const { error: upsertError } = await adminClient.from("daily_usage").upsert(
+    {
+      user_id: userId,
+      usage_date: usageDate,
+      message_count: usedAfterRequest,
+      updated_at: new Date().toISOString(),
+    },
+    {
+      onConflict: "user_id,usage_date",
+    },
+  );
+
+  if (upsertError) throw upsertError;
+
+  return {
+    isAdmin: false,
+    limit: FREE_DAILY_MESSAGE_LIMIT,
+    used: usedAfterRequest,
+    remaining: FREE_DAILY_MESSAGE_LIMIT - usedAfterRequest,
+    limitReached: false,
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -156,7 +219,51 @@ export default async function handler(req, res) {
     });
   }
 
+  const accessToken = getAccessToken(req);
+
+  if (!accessToken) {
+    return res.status(401).json({
+      error: "Please log in before chatting.",
+    });
+  }
+
   try {
+    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+
+    if (!supabaseUrl || !serviceRoleKey || !adminEmail) {
+      throw new Error("Server environment variables are missing.");
+    }
+
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    const {
+      data: { user },
+      error: userError,
+    } = await adminClient.auth.getUser(accessToken);
+
+    if (userError || !user) {
+      return res.status(401).json({
+        error: "Your session is invalid or expired. Please log in again.",
+      });
+    }
+
+    const isAdmin = user.email?.toLowerCase() === adminEmail;
+
+    const usage = await checkAndIncrementUsage({
+      adminClient,
+      userId: user.id,
+      isAdmin,
+    });
+
+    if (usage.limitReached) {
+      return res.status(429).json({
+        error: `Daily limit reached (${FREE_DAILY_MESSAGE_LIMIT} messages). Please try again tomorrow.`,
+        usage,
+      });
+    }
+
     let contentParts = [
       {
         text:
@@ -166,20 +273,7 @@ export default async function handler(req, res) {
     ];
 
     if (attachment) {
-      const {
-        name,
-        path,
-        type,
-        size,
-      } = attachment;
-
-      const accessToken = getAccessToken(req);
-
-      if (!accessToken) {
-        return res.status(401).json({
-          error: "Please log in before sending an attachment.",
-        });
-      }
+      const { name, path, type, size } = attachment;
 
       if (
         !name ||
@@ -200,26 +294,6 @@ export default async function handler(req, res) {
         return res.status(400).json({
           error:
             "Unsupported file type. Use PNG, JPG, WEBP, PDF, TXT, MD, JS, JSX, TS, TSX, HTML, CSS, JSON, or PY.",
-        });
-      }
-
-      const supabaseUrl = process.env.VITE_SUPABASE_URL;
-      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-      if (!supabaseUrl || !serviceRoleKey) {
-        throw new Error("Attachment server configuration is missing.");
-      }
-
-      const adminClient = createClient(supabaseUrl, serviceRoleKey);
-
-      const {
-        data: { user },
-        error: userError,
-      } = await adminClient.auth.getUser(accessToken);
-
-      if (userError || !user) {
-        return res.status(401).json({
-          error: "Your session is invalid or expired.",
         });
       }
 
@@ -260,7 +334,9 @@ export default async function handler(req, res) {
       if (isImageFile(safeMimeType)) {
         contentParts = [
           {
-            text: `${trimmedMessage || "Please analyze this image."}\n\nAttached image: ${displayName}`,
+            text: `${
+              trimmedMessage || "Please analyze this image."
+            }\n\nAttached image: ${displayName}`,
           },
           {
             inlineData: {
@@ -272,7 +348,9 @@ export default async function handler(req, res) {
       } else if (safeMimeType === "application/pdf") {
         contentParts = [
           {
-            text: `${trimmedMessage || "Please analyze and summarize this PDF."}\n\nAttached PDF: ${displayName}`,
+            text: `${
+              trimmedMessage || "Please analyze and summarize this PDF."
+            }\n\nAttached PDF: ${displayName}`,
           },
           {
             inlineData: {
@@ -324,6 +402,16 @@ ${textContent}
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache, no-transform");
     res.setHeader("Connection", "keep-alive");
+
+    res.setHeader(
+      "X-Nathan-Usage",
+      JSON.stringify({
+        limit: usage.limit,
+        used: usage.used,
+        remaining: usage.remaining,
+        isAdmin: usage.isAdmin,
+      }),
+    );
 
     for await (const chunk of stream) {
       const text = chunk.text || "";
