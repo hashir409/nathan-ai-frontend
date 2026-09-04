@@ -79,6 +79,36 @@ function safeFileName(fileName = "") {
     .replace(/-+/g, "-")
     .slice(0, 100);
 }
+function buildConversationHistory(messagesToSend) {
+  return messagesToSend
+    .filter(
+      (message) =>
+        !message.loading &&
+        (message.role === "user" || message.role === "assistant") &&
+        typeof message.content === "string" &&
+        !String(message.id).startsWith("user-") &&
+        !String(message.id).startsWith("assistant-"),
+    )
+    .slice(-12)
+    .map((message) => ({
+      role: message.role === "assistant" ? "model" : "user",
+      content: message.content.slice(0, 12000),
+    }));
+}
+
+async function getApiErrorMessage(response, fallbackMessage) {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    const result = await response.json();
+
+    return result.error || fallbackMessage;
+  }
+
+  const text = await response.text();
+
+  return text || fallbackMessage;
+}
 function App() {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -266,13 +296,15 @@ async function uploadAttachment(userId, attachment) {
   setIsSending(true);
   setAttachmentError("");
 
+  const history = buildConversationHistory(messages);
+
   const localUserMessage = {
     id: `user-${Date.now()}`,
     role: "user",
     content: text || `Attached file: ${attachmentToSend.name}`,
     attachment_name: attachmentToSend?.name || null,
-attachment_type: attachmentToSend?.type || null,
-attachment_size: attachmentToSend?.size || null,
+    attachment_type: attachmentToSend?.type || null,
+    attachment_size: attachmentToSend?.size || null,
   };
 
   const loadingMessageId = `assistant-${Date.now()}`;
@@ -280,6 +312,7 @@ attachment_size: attachmentToSend?.size || null,
   setMessages((currentMessages) => [...currentMessages, localUserMessage]);
   setInput("");
   setSelectedAttachment(null);
+  setShowAttachmentMenu(false);
 
   setMessages((currentMessages) => [
     ...currentMessages,
@@ -292,6 +325,8 @@ attachment_size: attachmentToSend?.size || null,
   ]);
 
   let uploadedAttachment = null;
+  let activeConversationId = conversationId;
+  let userMessageSaved = false;
 
   try {
     setUploadingAttachment(Boolean(attachmentToSend));
@@ -299,8 +334,6 @@ attachment_size: attachmentToSend?.size || null,
     if (attachmentToSend) {
       uploadedAttachment = await uploadAttachment(userId, attachmentToSend);
     }
-
-    let activeConversationId = conversationId;
 
     if (!activeConversationId) {
       const { data: newConversation, error: createConversationError } =
@@ -319,20 +352,36 @@ attachment_size: attachmentToSend?.size || null,
       setConversationId(activeConversationId);
     }
 
-    const { error: saveUserMessageError } = await supabase
-      .from("messages")
-      .insert({
-        conversation_id: activeConversationId,
-        user_id: userId,
-        role: "user",
-        content: text || `Attached file: ${uploadedAttachment.name}`,
-        attachment_name: uploadedAttachment?.name || null,
-        attachment_path: uploadedAttachment?.path || null,
-        attachment_type: uploadedAttachment?.type || null,
-        attachment_size: uploadedAttachment?.size || null,
-      });
+    const savedUserContent =
+      text || `Attached file: ${uploadedAttachment?.name || attachmentToSend.name}`;
+
+    const { data: savedUserMessage, error: saveUserMessageError } =
+      await supabase
+        .from("messages")
+        .insert({
+          conversation_id: activeConversationId,
+          user_id: userId,
+          role: "user",
+          content: savedUserContent,
+          attachment_name: uploadedAttachment?.name || null,
+          attachment_path: uploadedAttachment?.path || null,
+          attachment_type: uploadedAttachment?.type || null,
+          attachment_size: uploadedAttachment?.size || null,
+        })
+        .select(
+          "id, role, content, created_at, feedback, regenerated, attachment_name, attachment_path, attachment_type, attachment_size",
+        )
+        .single();
 
     if (saveUserMessageError) throw saveUserMessageError;
+
+    userMessageSaved = true;
+
+    setMessages((currentMessages) =>
+      currentMessages.map((message) =>
+        message.id === localUserMessage.id ? savedUserMessage : message,
+      ),
+    );
 
     const {
       data: { session: latestSession },
@@ -340,7 +389,7 @@ attachment_size: attachmentToSend?.size || null,
     } = await supabase.auth.getSession();
 
     if (sessionError || !latestSession?.access_token) {
-      throw new Error("Please log in again before sending an attachment.");
+      throw new Error("Your session expired. Please log in again.");
     }
 
     const response = await fetch("/api/chat", {
@@ -351,6 +400,7 @@ attachment_size: attachmentToSend?.size || null,
       },
       body: JSON.stringify({
         message: text,
+        history,
         attachment: uploadedAttachment
           ? {
               name: uploadedAttachment.name,
@@ -363,7 +413,12 @@ attachment_size: attachmentToSend?.size || null,
     });
 
     if (!response.ok) {
-      throw new Error("Nathan AI could not respond right now.");
+      throw new Error(
+        await getApiErrorMessage(
+          response,
+          "Nathan AI could not respond right now. Please try again.",
+        ),
+      );
     }
 
     if (!response.body) {
@@ -372,7 +427,6 @@ attachment_size: attachmentToSend?.size || null,
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-
     let aiReply = "";
 
     while (true) {
@@ -397,17 +451,24 @@ attachment_size: attachmentToSend?.size || null,
     aiReply += decoder.decode();
 
     if (!aiReply.trim()) {
-      aiReply = "Sorry, I could not generate a response right now.";
+      throw new Error(
+        "Nathan AI returned an empty response. Please try again.",
+      );
     }
 
-    const { error: saveAssistantMessageError } = await supabase
-      .from("messages")
-      .insert({
-        conversation_id: activeConversationId,
-        user_id: userId,
-        role: "assistant",
-        content: aiReply,
-      });
+    const { data: savedAssistantMessage, error: saveAssistantMessageError } =
+      await supabase
+        .from("messages")
+        .insert({
+          conversation_id: activeConversationId,
+          user_id: userId,
+          role: "assistant",
+          content: aiReply,
+        })
+        .select(
+          "id, role, content, created_at, feedback, regenerated, attachment_name, attachment_path, attachment_type, attachment_size",
+        )
+        .single();
 
     if (saveAssistantMessageError) throw saveAssistantMessageError;
 
@@ -418,19 +479,16 @@ attachment_size: attachmentToSend?.size || null,
 
     setMessages((currentMessages) =>
       currentMessages.map((message) =>
-        message.id === loadingMessageId
-          ? {
-              id: `assistant-saved-${Date.now()}`,
-              role: "assistant",
-              content: aiReply,
-            }
-          : message,
+        message.id === loadingMessageId ? savedAssistantMessage : message,
       ),
     );
-  } catch (error) {
-    console.error(error);
 
-    
+    setConversationsTrigger((currentValue) => currentValue + 1);
+  } catch (error) {
+    console.error("Send chat error:", error);
+
+    const friendlyError =
+      error.message || "Nathan AI could not process your request.";
 
     setMessages((currentMessages) =>
       currentMessages.map((message) =>
@@ -438,18 +496,21 @@ attachment_size: attachmentToSend?.size || null,
           ? {
               id: `assistant-error-${Date.now()}`,
               role: "assistant",
-              content:
-                "Sorry, Nathan AI could not process your request. Please try again.",
+              content: `**Request failed:** ${friendlyError}`,
+              error: true,
             }
           : message,
       ),
     );
 
-    setAttachmentError(error.message || "Could not send this attachment.");
+    if (!userMessageSaved) {
+      setAttachmentError(friendlyError);
+    }
   } finally {
     setUploadingAttachment(false);
     setIsSending(false);
   }
+
 
   }function handleInputKeyDown(event) {
   const isComposing = event.nativeEvent.isComposing;
@@ -595,15 +656,22 @@ const response = await fetch("/api/chat", {
     "Content-Type": "application/json",
     Authorization: `Bearer ${latestSession.access_token}`,
   },
-  body: JSON.stringify({
-    message: previousUserMessage.content,
-  }),
+ body: JSON.stringify({
+  message: previousUserMessage.content,
+  history: buildConversationHistory(
+    messages.slice(0, assistantIndex - 1),
+  ),
+}),
 });
 
     if (!response.ok) {
-      throw new Error("Nathan AI could not regenerate the response.");
-    }
-
+  throw new Error(
+    await getApiErrorMessage(
+      response,
+      "Nathan AI could not regenerate the response.",
+    ),
+  );
+}
    if (!response.body) {
   throw new Error("Streaming response is not available.");
 }

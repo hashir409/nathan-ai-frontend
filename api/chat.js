@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const FREE_DAILY_MESSAGE_LIMIT = 20;
+const MAX_HISTORY_MESSAGES = 12;
+const MAX_HISTORY_MESSAGE_CHARACTERS = 12000;
 
 const ALLOWED_FILE_TYPES = {
   "image/png": ["png"],
@@ -45,6 +47,12 @@ Identity rules:
   "I’m Nathan AI, created and configured by Hashir using React, Vite, and a secure AI backend."
 - Do not claim that Google, OpenAI, or any other company created Nathan AI.
 - You may say that you are powered by Gemini only if the user specifically asks about the underlying AI provider.
+
+Conversation rules:
+- Use previous conversation messages as context.
+- Answer the latest user request directly.
+- If the latest message refers to earlier details, use the available chat history rather than saying you do not remember.
+- Do not invent details that are not present in the conversation.
 
 Response rules:
 - Use clear Markdown.
@@ -138,6 +146,30 @@ function safeAttachmentName(name) {
     .slice(0, 160);
 }
 
+function sanitizeHistory(history) {
+  if (!Array.isArray(history)) {
+    return [];
+  }
+
+  return history
+    .filter(
+      (item) =>
+        item &&
+        (item.role === "user" || item.role === "model") &&
+        typeof item.content === "string" &&
+        item.content.trim(),
+    )
+    .slice(-MAX_HISTORY_MESSAGES)
+    .map((item) => ({
+      role: item.role,
+      parts: [
+        {
+          text: item.content.trim().slice(0, MAX_HISTORY_MESSAGE_CHARACTERS),
+        },
+      ],
+    }));
+}
+
 async function checkAndIncrementUsage({ adminClient, userId, isAdmin }) {
   if (isAdmin) {
     return {
@@ -145,6 +177,7 @@ async function checkAndIncrementUsage({ adminClient, userId, isAdmin }) {
       limit: null,
       used: null,
       remaining: null,
+      limitReached: false,
     };
   }
 
@@ -199,11 +232,11 @@ async function checkAndIncrementUsage({ adminClient, userId, isAdmin }) {
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
-      error: "Method not allowed",
+      error: "Method not allowed.",
     });
   }
 
-  const { message, attachment } = req.body || {};
+  const { message, history, attachment } = req.body || {};
 
   if ((!message || typeof message !== "string") && !attachment) {
     return res.status(400).json({
@@ -211,14 +244,13 @@ export default async function handler(req, res) {
     });
   }
 
-  const trimmedMessage = typeof message === "string" ? message.trim() : "";
-
   if (attachment && typeof attachment !== "object") {
     return res.status(400).json({
       error: "Invalid attachment.",
     });
   }
 
+  const trimmedMessage = typeof message === "string" ? message.trim() : "";
   const accessToken = getAccessToken(req);
 
   if (!accessToken) {
@@ -251,20 +283,7 @@ export default async function handler(req, res) {
 
     const isAdmin = user.email?.toLowerCase() === adminEmail;
 
-    const usage = await checkAndIncrementUsage({
-      adminClient,
-      userId: user.id,
-      isAdmin,
-    });
-
-    if (usage.limitReached) {
-      return res.status(429).json({
-        error: `Daily limit reached (${FREE_DAILY_MESSAGE_LIMIT} messages). Please try again tomorrow.`,
-        usage,
-      });
-    }
-
-    let contentParts = [
+    let latestParts = [
       {
         text:
           trimmedMessage ||
@@ -297,9 +316,7 @@ export default async function handler(req, res) {
         });
       }
 
-      const expectedPrefix = `${user.id}/`;
-
-      if (!path.startsWith(expectedPrefix)) {
+      if (!path.startsWith(`${user.id}/`)) {
         return res.status(403).json({
           error: "You cannot access this attachment.",
         });
@@ -332,7 +349,7 @@ export default async function handler(req, res) {
       const displayName = safeAttachmentName(name);
 
       if (isImageFile(safeMimeType)) {
-        contentParts = [
+        latestParts = [
           {
             text: `${
               trimmedMessage || "Please analyze this image."
@@ -346,7 +363,7 @@ export default async function handler(req, res) {
           },
         ];
       } else if (safeMimeType === "application/pdf") {
-        contentParts = [
+        latestParts = [
           {
             text: `${
               trimmedMessage || "Please analyze and summarize this PDF."
@@ -362,7 +379,7 @@ export default async function handler(req, res) {
       } else if (isTextFile(safeMimeType, name)) {
         const textContent = fileBuffer.toString("utf8").slice(0, 200000);
 
-        contentParts = [
+        latestParts = [
           {
             text: `${trimmedMessage || "Please analyze this attached file."}
 
@@ -381,18 +398,34 @@ ${textContent}
       }
     }
 
+    const usage = await checkAndIncrementUsage({
+      adminClient,
+      userId: user.id,
+      isAdmin,
+    });
+
+    if (usage.limitReached) {
+      return res.status(429).json({
+        error: `Daily limit reached (${FREE_DAILY_MESSAGE_LIMIT} messages). Please try again tomorrow.`,
+        usage,
+      });
+    }
+
+    const contents = [
+      ...sanitizeHistory(history),
+      {
+        role: "user",
+        parts: latestParts,
+      },
+    ];
+
     const ai = new GoogleGenAI({
       apiKey: process.env.GEMINI_API_KEY,
     });
 
     const stream = await ai.models.generateContentStream({
       model: "gemini-3.6-flash",
-      contents: [
-        {
-          role: "user",
-          parts: contentParts,
-        },
-      ],
+      contents,
       config: {
         systemInstruction,
       },
@@ -402,7 +435,6 @@ ${textContent}
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache, no-transform");
     res.setHeader("Connection", "keep-alive");
-
     res.setHeader(
       "X-Nathan-Usage",
       JSON.stringify({
@@ -427,7 +459,8 @@ ${textContent}
 
     if (!res.headersSent) {
       return res.status(500).json({
-        error: "Nathan AI is unavailable right now. Please try again.",
+        error:
+          "Nathan AI is temporarily unavailable. Please wait a moment and try again.",
       });
     }
 
