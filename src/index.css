@@ -5,14 +5,26 @@
   text-rendering: optimizeLegibility;
 }
 
-body {
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
   margin: 0;
-  min-width: 320px;
+  padding: 0;
 }
+
+body {
+  min-width: 320px;
+  overflow-x: hidden;
+  background: #0b1020;
+}
+
 .auth-page,
 .auth-loading {
-  min-height: 100vh;
   display: grid;
+  min-height: 100dvh;
   place-items: center;
   padding: 24px;
   background: #0b0d12;
@@ -60,7 +72,6 @@ body {
 
 .auth-form input {
   width: 100%;
-  box-sizing: border-box;
   border: 1px solid #313a4b;
   border-radius: 10px;
   padding: 12px;
@@ -105,60 +116,4 @@ body {
   color: #7dd3fc;
   font: inherit;
   cursor: pointer;
-}/* Sidebar header + close button */
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.close-sidebar-button {
-  background: transparent;
-  border: none;
-  color: #aaa;
-  font-size: 20px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.close-sidebar-button:hover {
-  background: #1a1a1a;
-  color: #fff;
-}
-
-.sidebar-title {
-  font-weight: 700;
-  color: #fff;
-  font-size: 16px;
-}
-
-/* Mobile responsive */
-@media (max-width: 768px) {
-  .chat-sidebar {
-    width: 85vw;
-    max-width: 320px;
-  }
-
-  .toggle-sidebar-button {
-    display: block;
-  }
-}
-
-@media (min-width: 769px) {
-  .toggle-sidebar-button {
-    display: none;
-  }
-
-  .chat-sidebar {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-  }
-
-  .app {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-  }
 }
