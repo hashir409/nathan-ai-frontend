@@ -151,7 +151,7 @@ function sanitizeHistory(history) {
     return [];
   }
 
-  return history
+  const cleaned = history
     .filter(
       (item) =>
         item &&
@@ -162,12 +162,33 @@ function sanitizeHistory(history) {
     .slice(-MAX_HISTORY_MESSAGES)
     .map((item) => ({
       role: item.role,
-      parts: [
-        {
-          text: item.content.trim().slice(0, MAX_HISTORY_MESSAGE_CHARACTERS),
-        },
-      ],
+      content: item.content.trim().slice(0, MAX_HISTORY_MESSAGE_CHARACTERS),
     }));
+
+  const alternating = [];
+
+  for (const item of cleaned) {
+    const previous = alternating[alternating.length - 1];
+
+    if (!previous || previous.role !== item.role) {
+      alternating.push(item);
+      continue;
+    }
+
+    previous.content = `${previous.content}\n\n${item.content}`.slice(
+      0,
+      MAX_HISTORY_MESSAGE_CHARACTERS,
+    );
+  }
+
+  if (alternating[0]?.role === "model") {
+    alternating.shift();
+  }
+
+  return alternating.map((item) => ({
+    role: item.role,
+    parts: [{ text: item.content }],
+  }));
 }
 
 async function checkAndIncrementUsage({ adminClient, userId, isAdmin }) {
@@ -411,13 +432,19 @@ ${textContent}
       });
     }
 
-    const contents = [
-      ...sanitizeHistory(history),
-      {
-        role: "user",
-        parts: latestParts,
-      },
-    ];
+    const safeHistory = sanitizeHistory(history);
+
+if (safeHistory[safeHistory.length - 1]?.role === "user") {
+  safeHistory.pop();
+}
+
+const contents = [
+  ...safeHistory,
+  {
+    role: "user",
+    parts: latestParts,
+  },
+];
 
     const ai = new GoogleGenAI({
       apiKey: process.env.GEMINI_API_KEY,
@@ -455,8 +482,12 @@ ${textContent}
 
     res.end();
   } catch (error) {
-    console.error("Gemini streaming error:", error);
-
+    console.error("Gemini streaming error:", {
+  message: error?.message,
+  status: error?.status,
+  name: error?.name,
+  stack: error?.stack,
+});
     if (!res.headersSent) {
       return res.status(500).json({
         error:
